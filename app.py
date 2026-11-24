@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -21,6 +22,7 @@ from audit_logic import (
 load_dotenv()
 
 MODEL_NAME = "gemini-3.8-flash"
+FALLBACK_MODELS = ["gemini-3.8-flash", "gemini-2.5-flash"]
 
 st.set_page_config(
     page_title="Auditraa — Dari Angka ke Bukti, Otomatis Terdokumentasi",
@@ -54,7 +56,7 @@ def get_gemini_client() -> genai.Client | None:
 
 
 def call_llm(system_prompt: str, user_prompt: str) -> str:
-    """Memanggil Gemini API dengan temperature=0 untuk hasil yang stabil."""
+    """Memanggil Gemini API dengan retry otomatis saat 503/UNAVAILABLE dan fallback model."""
     client = get_gemini_client()
     if client is None:
         return (
@@ -62,19 +64,47 @@ def call_llm(system_prompt: str, user_prompt: str) -> str:
             "Tambahkan `GEMINI_API_KEY` ke file `.env` (untuk lokal) atau ke **Settings → Secrets** "
             "di Streamlit Community Cloud."
         )
-    try:
-        response = client.models.generate_content(
-            model=MODEL_NAME,
-            contents=user_prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=system_prompt,
-                temperature=0,
-            ),
-        )
-        content = response.text
-        return content.strip() if content else "⚠️ Model tidak mengembalikan teks."
-    except Exception as exc:
-        return f"⚠️ Terjadi kesalahan saat memanggil Gemini API: `{exc}`"
+
+    models_to_try = []
+    for m in [MODEL_NAME] + FALLBACK_MODELS:
+        if m and m not in models_to_try:
+            models_to_try.append(m)
+
+    last_exc: Exception | None = None
+    for model_id in models_to_try:
+        for attempt in range(3):
+            try:
+                response = client.models.generate_content(
+                    model=model_id,
+                    contents=user_prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_prompt,
+                        temperature=0,
+                    ),
+                )
+                content = response.text
+                if content and content.strip():
+                    return content.strip()
+                return "⚠️ Model tidak mengembalikan teks."
+            except Exception as exc:
+                last_exc = exc
+                err_str = str(exc)
+                is_transient = (
+                    "503" in err_str
+                    or "UNAVAILABLE" in err_str
+                    or "429" in err_str
+                    or "RESOURCE_EXHAUSTED" in err_str
+                    or "high demand" in err_str.lower()
+                )
+                if is_transient and attempt < 2:
+                    time.sleep(1.5 * (attempt + 1))
+                    continue
+                break
+
+    return (
+        f"⚠️ Server Gemini sedang sibuk atau terjadi gangguan setelah beberapa percobaan: `{last_exc}`\n\n"
+        "Silakan tunggu beberapa detik lalu klik tombolnya kembali."
+    )
 
 
 def init_session_state() -> None:
