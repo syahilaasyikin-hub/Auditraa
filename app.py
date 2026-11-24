@@ -21,14 +21,11 @@ from audit_logic import (
 
 load_dotenv()
 
-MODEL_CANDIDATES = [
-    "gemini-3.8-flash",
-    "gemini-2.5-flash",
-    "gemini-2.5-flash-lite",
-]
+MODEL_NAME = "gemini-3.8-flash"
+FALLBACK_MODELS = ["gemini-3.8-flash", "gemini-2.5-flash"]
 
 st.set_page_config(
-    page_title="Auditraa — Analisis Kertas Kerja Audit",
+    page_title="Auditraa — Dari Angka ke Bukti, Otomatis Terdokumentasi",
     page_icon="📑",
     layout="wide",
 )
@@ -50,62 +47,16 @@ def get_api_key() -> str | None:
     return None
 
 
-@st.cache_resource
-def _cached_gemini_client(api_key: str) -> genai.Client:
-    """Menyimpan instance Gemini client agar tidak dibuat ulang tiap interaksi."""
-    return genai.Client(api_key=api_key)
-
-
 def get_gemini_client() -> genai.Client | None:
+    """Membuat instance Gemini client jika API key tersedia."""
     api_key = get_api_key()
     if not api_key:
         return None
-    return _cached_gemini_client(api_key)
+    return genai.Client(api_key=api_key)
 
 
-def _offline_deterministic_analysis(
-    wp_df: pd.DataFrame,
-    client_name: str,
-    period: str,
-    materiality: float,
-    selected_scope: str,
-) -> str:
-    """Cadangan analisis deterministik dari kode jika seluruh model Gemini sedang 503."""
-    lines = [
-        "**[DRAFT ANALISIS CADANGAN (NON-LLM) — PERLU REVIEW AUDITOR]**",
-        f"_Catatan: Server Gemini sedang mengalami lonjakan beban (503 UNAVAILABLE), sehingga ditampilkan ringkasan otomatis dari hasil perhitungan kode._",
-        "",
-        f"- **Klien / Periode:** {client_name} ({period})",
-        f"- **Ambang Materialitas:** Rp {materiality:,.0f}",
-    ]
-    if selected_scope == "Semua Akun (Analisis Menyeluruh)":
-        target_df = wp_df
-    else:
-        wp_code = selected_scope.split(" — ")[0].strip()
-        target_df = wp_df[wp_df["WP_Ref"] == wp_code]
-
-    for _, row in target_df.iterrows():
-        ev = row["Evidence_Ref"] if row["Evidence_Ref"] else "BUKTI BELUM TERSEDIA"
-        lines.append(
-            f"- **{row['WP_Ref']} — {row['Category']}:** Budget Rp {row['Budget']:,.0f}, "
-            f"Actual Rp {row['Actual']:,.0f}, Variance Rp {row['Variance']:,.0f} "
-            f"({row['Variance_Pct']:.2f}%), Severity: **{row['Severity']}**, "
-            f"Tick Mark: `{row['Tick_Mark']}`, Bukti: `{ev}`."
-        )
-    return "
-".join(lines)
-
-
-def call_llm(
-    system_prompt: str,
-    user_prompt: str,
-    fallback_df: pd.DataFrame | None = None,
-    client_name: str = "",
-    period: str = "",
-    materiality: float = 0.0,
-    selected_scope: str = "Semua Akun (Analisis Menyeluruh)",
-) -> str:
-    """Memanggil Gemini API dengan pindah model cepat saat 503 dan cadangan otomatis jika semua sibuk."""
+def call_llm(system_prompt: str, user_prompt: str) -> str:
+    """Memanggil Gemini API dengan retry otomatis saat 503/UNAVAILABLE dan fallback model."""
     client = get_gemini_client()
     if client is None:
         return (
@@ -114,9 +65,14 @@ def call_llm(
             "di Streamlit Community Cloud."
         )
 
+    models_to_try = []
+    for m in [MODEL_NAME] + FALLBACK_MODELS:
+        if m and m not in models_to_try:
+            models_to_try.append(m)
+
     last_exc: Exception | None = None
-    for model_id in MODEL_CANDIDATES:
-        for attempt in range(2):
+    for model_id in models_to_try:
+        for attempt in range(3):
             try:
                 response = client.models.generate_content(
                     model=model_id,
@@ -129,32 +85,35 @@ def call_llm(
                 content = response.text
                 if content and content.strip():
                     return content.strip()
+                return "⚠️ Model tidak mengembalikan teks."
             except Exception as exc:
                 last_exc = exc
                 err_str = str(exc)
-                is_overload = (
+                is_transient = (
                     "503" in err_str
                     or "UNAVAILABLE" in err_str
                     or "429" in err_str
                     or "RESOURCE_EXHAUSTED" in err_str
                     or "high demand" in err_str.lower()
                 )
-                if is_overload and attempt == 0:
-                    time.sleep(0.6)
+                if is_transient and attempt < 2:
+                    time.sleep(1.5 * (attempt + 1))
                     continue
                 break
 
-    if fallback_df is not None:
-        return _offline_deterministic_analysis(
-            fallback_df, client_name, period, materiality, selected_scope
-        ) + f"\n\n_Detail error terakhir: `{last_exc}`_"
-
-    return f"⚠️ Server Gemini sedang sibuk (`503 UNAVAILABLE`). Silakan coba lagi beberapa saat: `{last_exc}`"
+    return (
+        f"⚠️ Server Gemini sedang sibuk atau terjadi gangguan setelah beberapa percobaan: `{last_exc}`\n\n"
+        "Silakan tunggu beberapa detik lalu klik tombolnya kembali."
+    )
 
 
 def init_session_state() -> None:
+    """Inisialisasi state aplikasi di session_state."""
     defaults = {
-        "ai_analysis": "",
+        "ai_explanation": "",
+        "findings_draft": "",
+        "mgmt_letter_draft": "",
+        "chat_history": [],
         "use_demo_data": False,
     }
     for key, val in defaults.items():
@@ -162,17 +121,25 @@ def init_session_state() -> None:
             st.session_state[key] = val
 
 
+def reset_generated_outputs() -> None:
+    """Membersihkan draf narasi, penjelasan AI, dan chat saat dataset baru dimuat."""
+    st.session_state["ai_explanation"] = ""
+    st.session_state["findings_draft"] = ""
+    st.session_state["mgmt_letter_draft"] = ""
+    st.session_state["chat_history"] = []
+
+
 init_session_state()
 
-# --- HEADER ---
+# --- HEADER & BRANDING ---
 st.title("📑 Auditraa")
-st.caption("**Analisis Hasil Kertas Kerja Audit oleh AI.** | *Kode menghitung, AI menganalisis, manusia memutuskan.*")
+st.caption("**Dari Angka ke Bukti, Otomatis Terdokumentasi.** | *Kode menghitung, AI menulis, manusia memutuskan.*")
 st.warning(
-    "🔒 **STATUS KELUARAN: SELALU DRAFT** — Hasil analisis AI bersifat draf awal "
-    "dan wajib direview serta diputuskan oleh auditor."
+    "🔒 **STATUS KELUARAN: SELALU DRAFT** — Seluruh keluaran yang disusun AI bersifat draf kerja "
+    "dan wajib direview, dikoreksi, serta diputuskan oleh auditor."
 )
 
-# --- SIDEBAR ---
+# --- SIDEBAR: PARAMETER AUDIT ---
 with st.sidebar:
     st.header("⚙️ Parameter Audit")
     client_name = st.text_input("Nama Entitas / Klien", value="PT Nusantara Sejahtera Tbk (Demo)")
@@ -194,13 +161,13 @@ with st.sidebar:
         help="Kolom wajib: Category, Budget, Actual. Kolom opsional: Evidence_Ref",
     )
 
-    col_d1, col_d2 = st.columns(2)
-    with col_d1:
+    col_demo1, col_demo2 = st.columns(2)
+    with col_demo1:
         if st.button("▶️ Muat Demo", use_container_width=True):
             st.session_state["use_demo_data"] = True
-            st.session_state["ai_analysis"] = ""
+            reset_generated_outputs()
             st.rerun()
-    with col_d2:
+    with col_demo2:
         st.download_button(
             label="📥 Contoh Excel",
             data=generate_sample_excel(),
@@ -213,20 +180,25 @@ with st.sidebar:
     st.markdown(
         """
         **Legenda Tick Mark:**
-        - `✓` : Selisih < 50% materialitas & bukti ada
+        - `✓` : Selisih di bawah 50% materialitas & bukti tersedia
         - `⊗` : Selisih ≥ 50% materialitas (Medium / High)
         - `?` : `BUKTI BELUM TERSEDIA`
         """
     )
+    st.info(
+        "🛡️ **Keamanan & Etika:** Jangan unggah data klien rahasia ke API publik tanpa izin. "
+        "Gunakan data fiktif untuk demo, tugas, atau pengujian."
+    )
 
-# --- DATA DETERMINISTIK ---
+# --- PEMUATAN & PEMROSESAN DATA DETERMINISTIK ---
 raw_df = None
+
 if uploaded_file is not None:
     st.session_state["use_demo_data"] = False
     try:
         raw_df = pd.read_excel(uploaded_file)
     except Exception as exc:
-        st.error(f"❌ Gagal membaca file Excel: `{exc}`")
+        st.error(f"❌ Gagal membaca file Excel yang diunggah: `{exc}`")
         st.stop()
 elif st.session_state["use_demo_data"]:
     try:
@@ -236,12 +208,18 @@ elif st.session_state["use_demo_data"]:
         st.stop()
 
 if raw_df is None or raw_df.empty:
-    st.info("👈 Unggah file Excel (.xlsx) di sidebar atau klik **▶️ Muat Demo** untuk mulai.")
+    st.info(
+        "👈 Silakan **unggah file Excel (.xlsx)** di sidebar atau klik **▶️ Muat Demo** "
+        "untuk menjalankan skenario Auditraa."
+    )
     st.stop()
 
 is_valid, missing_cols = validate_columns(raw_df)
 if not is_valid:
-    st.error(f"❌ Kolom wajib yang belum ada: **{', '.join(missing_cols)}**")
+    st.error(
+        f"❌ Struktur kolom Excel tidak sesuai. Kolom wajib yang belum ada: **{', '.join(missing_cols)}**.\n\n"
+        "Pastikan file memiliki kolom `Category`, `Budget`, dan `Actual` (opsional: `Evidence_Ref`)."
+    )
     st.stop()
 
 wp_df = process_working_paper(raw_df, float(materiality))
@@ -252,122 +230,338 @@ payload_json = json.dumps(
     ensure_ascii=False,
 )
 
-# --- RINGKASAN & TABEL KERTAS KERJA ---
-st.subheader(f"Lead Schedule — {client_name} ({period})")
+# --- EMPAT TAB UTAMA ---
+tab1, tab2, tab3, tab4 = st.tabs([
+    "1️⃣ Kertas Kerja",
+    "2️⃣ Ringkasan Temuan",
+    "3️⃣ Management Letter",
+    "4️⃣ Tanya Agen",
+])
 
-m1, m2, m3, m4 = st.columns(4)
-m1.metric("Total Akun", f"{len(wp_df)} Akun")
-m2.metric("Materialitas", f"Rp {materiality:,.0f}")
-m3.metric("High / Medium", f"{int((wp_df['Severity'] == 'High').sum())} High / {int((wp_df['Severity'] == 'Medium').sum())} Med")
-m4.metric("Bukti Kosong (?)", f"{len(missing_ev_df)} Akun", delta_color="inverse")
+# ==============================================================================
+# TAB 1: KERTAS KERJA + PENJELASAN HASIL OLEH AI
+# ==============================================================================
+with tab1:
+    st.subheader(f"Lead Schedule — {client_name} ({period})")
 
-if not missing_ev_df.empty:
-    st.warning(
-        f"⚠️ Terdapat **{len(missing_ev_df)} akun** dengan status `BUKTI BELUM TERSEDIA` (`?`): "
-        f"{', '.join(missing_ev_df['WP_Ref'] + ' - ' + missing_ev_df['Category'])}"
+    total_accounts = len(wp_df)
+    high_count = int((wp_df["Severity"] == "High").sum())
+    med_count = int((wp_df["Severity"] == "Medium").sum())
+    missing_count = len(missing_ev_df)
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Total Akun Diuji", f"{total_accounts} Akun")
+    m2.metric("Ambang Materialitas", f"Rp {materiality:,.0f}")
+    m3.metric("Selisih Signifikan", f"{high_count} High / {med_count} Med")
+    m4.metric("Bukti Belum Tersedia (?)", f"{missing_count} Akun", delta_color="inverse")
+
+    if not missing_ev_df.empty:
+        st.error(
+            f"⚠️ **Peringatan Bukti Hilang:** Terdapat **{missing_count} akun** dengan status "
+            "`BUKTI BELUM TERSEDIA` (Tick Mark `?`)."
+        )
+        with st.expander("📋 Daftar Akun Tanpa Referensi Bukti", expanded=True):
+            st.dataframe(
+                missing_ev_df.style.format({
+                    "Budget": "Rp {:,.0f}",
+                    "Actual": "Rp {:,.0f}",
+                    "Variance": "Rp {:,.0f}",
+                }),
+                use_container_width=True,
+                hide_index=True,
+            )
+
+    st.markdown("### Tabel Kertas Kerja Pemeriksaan")
+    display_df = wp_df.copy()
+    display_df["Evidence_Ref"] = display_df["Evidence_Ref"].replace("", "BUKTI BELUM TERSEDIA")
+
+    st.dataframe(
+        display_df.style.format({
+            "Budget": "Rp {:,.0f}",
+            "Actual": "Rp {:,.0f}",
+            "Variance": "Rp {:,.0f}",
+            "Variance_Pct": "{:.2f}%",
+        }),
+        use_container_width=True,
+        hide_index=True,
     )
 
-display_df = wp_df.copy()
-display_df["Evidence_Ref"] = display_df["Evidence_Ref"].replace("", "BUKTI BELUM TERSEDIA")
-st.dataframe(
-    display_df.style.format({
-        "Budget": "Rp {:,.0f}",
-        "Actual": "Rp {:,.0f}",
-        "Variance": "Rp {:,.0f}",
-        "Variance_Pct": "{:.2f}%",
-    }),
-    use_container_width=True,
-    hide_index=True,
-)
+    st.caption(
+        "**Legenda Tick Mark:** `✓` Cocok / di bawah ambang & bukti tersedia | "
+        "`⊗` Selisih melebihi ambang (≥ 50% materialitas) | `?` Bukti belum tersedia"
+    )
 
-fig = px.bar(
-    wp_df,
-    x="Category",
-    y="Variance",
-    color="Severity",
-    text="WP_Ref",
-    color_discrete_map={"High": "#DC2626", "Medium": "#F59E0B", "Low": "#16A34A"},
-    labels={"Category": "Akun", "Variance": "Selisih (Rp)", "Severity": "Severity"},
-    title="Varians Saldo per Akun",
-)
-fig.add_hline(y=float(materiality), line_dash="dash", line_color="#DC2626", annotation_text="Batas (+)")
-fig.add_hline(y=-float(materiality), line_dash="dash", line_color="#DC2626", annotation_text="Batas (-)")
-fig.update_traces(textposition="outside")
-st.plotly_chart(fig, use_container_width=True)
+    st.markdown("### Grafik Selisih per Akun")
+    fig = px.bar(
+        wp_df,
+        x="Category",
+        y="Variance",
+        color="Severity",
+        text="WP_Ref",
+        color_discrete_map={
+            "High": "#DC2626",
+            "Medium": "#F59E0B",
+            "Low": "#16A34A",
+        },
+        labels={
+            "Category": "Akun",
+            "Variance": "Selisih (Actual - Budget) [Rp]",
+            "Severity": "Severity",
+        },
+        title="Varians Saldo per Akun Terhadap Ambang Materialitas",
+    )
+    fig.add_hline(
+        y=float(materiality),
+        line_dash="dash",
+        line_color="#DC2626",
+        annotation_text="Batas Materialitas (+)",
+    )
+    fig.add_hline(
+        y=-float(materiality),
+        line_dash="dash",
+        line_color="#DC2626",
+        annotation_text="Batas Materialitas (-)",
+    )
+    fig.update_traces(textposition="outside")
+    st.plotly_chart(fig, use_container_width=True)
 
-# --- FITUR UTAMA: AI ANALISIS HASIL ---
-st.divider()
-st.markdown("### 🤖 Analisis Hasil Kertas Kerja oleh AI")
+    # --- PENJELASAN HASIL KERTAS KERJA OLEH AI ---
+    st.divider()
+    st.markdown("### 🤖 Penjelasan Hasil Kertas Kerja oleh AI (Draft)")
+    st.caption(
+        "AI membantu menjelaskan arti selisih (Budget vs Actual), tingkat Severity, Tick Mark, "
+        "dan kelengkapan bukti berdasarkan hasil hitung kode—bukan opini audit final."
+    )
 
-scope_options = ["Semua Akun (Analisis Menyeluruh)"] + [
-    f"{row['WP_Ref']} — {row['Category']}" for _, row in wp_df.iterrows()
-]
-selected_scope = st.selectbox("Fokus analisis:", options=scope_options)
+    account_options = ["Semua Akun (Ringkasan Kertas Kerja)"] + [
+        f"{row['WP_Ref']} — {row['Category']}" for _, row in wp_df.iterrows()
+    ]
+    selected_scope = st.selectbox(
+        "Pilih cakupan penjelasan:",
+        options=account_options,
+        key="explain_scope_select",
+    )
 
-if st.button("🔍 Analisis Hasil dengan AI", type="primary"):
-    if selected_scope == "Semua Akun (Analisis Menyeluruh)":
-        target_json = payload_json
-        focus_text = (
-            "Analisis hasil kertas kerja secara ringkas dan tajam: (1) akun dengan varians paling signifikan "
-            "(High/Medium), (2) pola atau indikasi awal yang perlu dicek auditor, dan (3) akun tanpa bukti ('?')."
+    if st.button("🧠 Jelaskan Hasil Kertas Kerja", key="btn_explain_wp"):
+        if selected_scope == "Semua Akun (Ringkasan Kertas Kerja)":
+            target_payload = payload_json
+            scope_instruction = (
+                "Jelaskan secara ringkas dan jelas gambaran umum hasil kertas kerja seluruh akun: "
+                "akun dengan selisih terbesar, akun ber-Severity High/Medium, serta akun bertanda '?' "
+                "(BUKTI BELUM TERSEDIA)."
+            )
+        else:
+            selected_wp = selected_scope.split(" — ")[0].strip()
+            filtered_df = wp_df[wp_df["WP_Ref"] == selected_wp]
+            target_payload = json.dumps(
+                build_llm_payload(filtered_df, client_name, period, float(materiality)),
+                indent=2,
+                ensure_ascii=False,
+            )
+            scope_instruction = (
+                f"Jelaskan secara rinci hasil perhitungan untuk akun **{selected_scope}**: "
+                "arti angka Budget, Actual, Variance, dan Variance %, alasan penetapan Severity & Tick Mark, "
+                "serta status Evidence_Ref (jika kosong wajib tulis 'BUKTI BELUM TERSEDIA')."
+            )
+
+        system_prompt_explain = """Anda adalah asisten auditor yang menjelaskan hasil perhitungan kertas kerja audit dalam Bahasa Indonesia yang jelas dan terstruktur.
+ATURAN KETAT:
+1. Awali penjelasan dengan label: **[DRAFT PENJELASAN HASIL - WAJIB REVIEW AUDITOR]**.
+2. HANYA gunakan angka yang persis ada pada data JSON sumber. DILARANG menghitung ulang, mengubah angka, atau mengarang angka baru.
+3. Selalu sertakan WP Ref saat merujuk akun.
+4. Jika bukti kosong, tulis persis "BUKTI BELUM TERSEDIA".
+5. DILARANG menuduh kecurangan atau menyatakan opini audit."""
+
+        user_prompt_explain = f"""Klien: **{client_name}** | Periode: **{period}** | Materialitas: **Rp {materiality:,.0f}**
+Tugas: {scope_instruction}
+
+Data Hasil Hitung Kode (JSON):
+{target_payload}"""
+
+        with st.spinner("Menyusun penjelasan hasil kertas kerja..."):
+            st.session_state["ai_explanation"] = call_llm(
+                system_prompt_explain,
+                user_prompt_explain,
+            )
+
+    if st.session_state["ai_explanation"]:
+        is_ok_exp, alien_nums_exp = check_numbers(
+            st.session_state["ai_explanation"],
+            wp_df,
+            float(materiality),
         )
-    else:
-        wp_code = selected_scope.split(" — ")[0].strip()
-        sub_df = wp_df[wp_df["WP_Ref"] == wp_code]
-        target_json = json.dumps(
-            build_llm_payload(sub_df, client_name, period, float(materiality)),
-            indent=2,
-            ensure_ascii=False,
+        if is_ok_exp:
+            st.success("✅ **Pemeriksa Angka:** Seluruh angka pada penjelasan AI cocok dengan data sumber.")
+        else:
+            st.error(
+                f"🚨 **Peringatan Pemeriksa Angka:** Ditemukan angka pada penjelasan yang tidak ada di data sumber: "
+                f"`{', '.join(alien_nums_exp)}`."
+            )
+
+        st.markdown(st.session_state["ai_explanation"])
+
+# ==============================================================================
+# TAB 2: RINGKASAN TEMUAN
+# ==============================================================================
+with tab2:
+    st.subheader("Penyusunan Draf Ringkasan Temuan Audit")
+    st.markdown(
+        "Menyusun draf narasi temuan dengan struktur **Kondisi, Kriteria, Penyebab (hipotesis), "
+        "Dampak, Rekomendasi, dan Bukti** berdasarkan hasil perhitungan kertas kerja."
+    )
+
+    if st.button("✨ Susun Ringkasan Temuan", type="primary"):
+        system_prompt_findings = """Anda adalah asisten auditor yang menyusun DRAF Ringkasan Temuan Audit dalam Bahasa Indonesia.
+ATURAN KETAT (GUARDRAILS):
+1. Awali seluruh keluaran dengan label: **[DRAFT - PERLU REVIEW AUDITOR]**.
+2. HANYA gunakan angka yang persis ada pada data JSON sumber. DILARANG menghitung ulang, mengubah angka, atau mengarang angka baru.
+3. Setiap temuan WAJIB mencantumkan WP Ref dan menggunakan bagian:
+   - **WP Ref & Akun**
+   - **Kondisi**
+   - **Kriteria** (rujukan PSAK/SA umum sebagai acuan awal; wajib diverifikasi auditor)
+   - **Penyebab (Hipotesis)** (WAJIB diawali kata "Diduga...")
+   - **Dampak**
+   - **Rekomendasi**
+   - **Bukti** (gunakan Evidence_Ref dari data; jika kosong WAJIB tulis "BUKTI BELUM TERSEDIA")
+4. DILARANG menuduh kecurangan (fraud) atau menyatakan opini audit final."""
+
+        user_prompt_findings = f"""Susun Ringkasan Temuan Audit untuk klien **{client_name}**, periode **{period}**, dengan materialitas **Rp {materiality:,.0f}**.
+Prioritaskan akun dengan Severity High, Medium, atau Tick Mark `?` (bukti belum tersedia).
+
+Data Kertas Kerja (JSON):
+{payload_json}"""
+
+        with st.spinner("Menyusun draf Ringkasan Temuan..."):
+            st.session_state["findings_draft"] = call_llm(
+                system_prompt_findings,
+                user_prompt_findings,
+            )
+
+    if st.session_state["findings_draft"]:
+        is_ok, alien_numbers = check_numbers(
+            st.session_state["findings_draft"],
+            wp_df,
+            float(materiality),
         )
-        focus_text = (
-            f"Analisis secara rinci hasil untuk akun **{selected_scope}**: makna selisih Budget vs Actual, "
-            "alasan Severity & Tick Mark, risiko yang perlu diuji auditor, dan status bukti."
-        )
+        if is_ok:
+            st.success(
+                "✅ **Pemeriksa Angka:** Seluruh angka pada narasi temuan cocok dengan data sumber kertas kerja."
+            )
+        else:
+            st.error(
+                f"🚨 **Peringatan Pemeriksa Angka:** Ditemukan angka di narasi yang tidak ada di data sumber: "
+                f"`{', '.join(alien_numbers)}`. Mohon periksa kembali secara manual."
+            )
 
-    sys_prompt = """Anda adalah asisten auditor yang menganalisis hasil perhitungan kertas kerja audit dalam Bahasa Indonesia.
-ATURAN:
-1. Awali dengan label: **[DRAFT ANALISIS AI - PERLU REVIEW AUDITOR]**.
-2. HANYA gunakan angka yang persis ada di JSON. DILARANG menghitung ulang atau mengarang angka baru.
-3. Selalu sebutkan WP Ref saat merujuk akun.
-4. Jika bukti kosong, tulis "BUKTI BELUM TERSEDIA".
-5. DILARANG menuduh kecurangan atau menerbitkan opini audit."""
+        st.divider()
+        st.markdown(st.session_state["findings_draft"])
 
-    usr_prompt = f"""Klien: {client_name} | Periode: {period} | Materialitas: Rp {materiality:,.0f}
-Instruksi: {focus_text}
+# ==============================================================================
+# TAB 3: MANAGEMENT LETTER
+# ==============================================================================
+with tab3:
+    st.subheader("Penyusunan Draf Management Letter & Ekspor Excel")
+    st.markdown(
+        "Menyusun draf surat rekomendasi kepada manajemen lengkap dengan ruang tanggapan manajemen "
+        "dan target perbaikan, serta mengunduh paket Excel 3 sheet."
+    )
 
-Data (JSON):
-{target_json}"""
+    col_ml1, col_ml2 = st.columns([1, 1])
+    with col_ml1:
+        if st.button("✉️ Susun Management Letter", type="primary", use_container_width=True):
+            system_prompt_letter = """Anda adalah asisten auditor yang menyusun DRAF Management Letter dalam Bahasa Indonesia formal.
+ATURAN KETAT (GUARDRAILS):
+1. Awali surat dengan label: **[DRAFT MANAGEMENT LETTER - WAJIB REVIEW AUDITOR]**.
+2. HANYA gunakan angka yang persis ada pada data JSON sumber atau Ringkasan Temuan. DILARANG mengarang angka.
+3. Sertakan bagian pembuka surat kepada Manajemen, poin-poin observasi & rekomendasi (cantumkan WP Ref dan status bukti; tulis "BUKTI BELUM TERSEDIA" jika kosong), serta bagian/tabel **Tanggapan Manajemen** dan **Target Perbaikan**.
+4. DILARANG menuduh kecurangan atau menerbitkan opini audit."""
 
-    with st.spinner("Menganalisis hasil..."):
-        st.session_state["ai_analysis"] = call_llm(
-            sys_prompt,
-            usr_prompt,
-            fallback_df=wp_df,
+            user_prompt_letter = f"""Susun Draf Management Letter untuk **{client_name}** periode **{period}** (Materialitas: Rp {materiality:,.0f}).
+
+Data Kertas Kerja (JSON):
+{payload_json}
+
+Draf Ringkasan Temuan (jika sudah dibuat):
+{st.session_state["findings_draft"] or "Belum dibuat terpisah; rujuk langsung data JSON kertas kerja."}"""
+
+            with st.spinner("Menyusun draf Management Letter..."):
+                st.session_state["mgmt_letter_draft"] = call_llm(
+                    system_prompt_letter,
+                    user_prompt_letter,
+                )
+
+    with col_ml2:
+        excel_data = export_audit_excel(
+            df=wp_df,
+            findings_text=st.session_state["findings_draft"],
+            mgmt_letter_text=st.session_state["mgmt_letter_draft"],
             client_name=client_name,
             period=period,
             materiality=float(materiality),
-            selected_scope=selected_scope,
+        )
+        safe_client = "".join(ch if ch.isalnum() or ch in ("_", "-") else "_" for ch in client_name)
+        st.download_button(
+            label="📥 Unduh Excel (3 Sheet: Kertas Kerja, Temuan, Letter)",
+            data=excel_data,
+            file_name=f"Auditraa_Draft_{safe_client}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True,
         )
 
-if st.session_state["ai_analysis"]:
-    is_ok, alien_nums = check_numbers(st.session_state["ai_analysis"], wp_df, float(materiality))
-    if is_ok:
-        st.success("✅ **Pemeriksa Angka:** Seluruh angka pada analisis AI sesuai dengan data sumber.")
-    else:
-        st.error(f"🚨 **Peringatan Pemeriksa Angka:** Ada angka di analisis yang tidak ada di data sumber: `{', '.join(alien_nums)}`.")
-    st.markdown(st.session_state["ai_analysis"])
+    if st.session_state["mgmt_letter_draft"]:
+        is_ok_ml, alien_numbers_ml = check_numbers(
+            st.session_state["mgmt_letter_draft"],
+            wp_df,
+            float(materiality),
+        )
+        if is_ok_ml:
+            st.success(
+                "✅ **Pemeriksa Angka:** Seluruh angka pada draf Management Letter sesuai dengan data sumber."
+            )
+        else:
+            st.error(
+                f"🚨 **Peringatan Pemeriksa Angka:** Ditemukan angka di surat yang tidak ada di data sumber: "
+                f"`{', '.join(alien_numbers_ml)}`."
+            )
 
-excel_simple = export_audit_excel(
-    df=wp_df,
-    findings_text=st.session_state["ai_analysis"],
-    mgmt_letter_text="",
-    client_name=client_name,
-    period=period,
-    materiality=float(materiality),
-)
-st.download_button(
-    label="📥 Unduh Kertas Kerja (.xlsx)",
-    data=excel_simple,
-    file_name="Auditraa_Analisis.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-)
+        st.divider()
+        st.markdown(st.session_state["mgmt_letter_draft"])
+
+# ==============================================================================
+# TAB 4: TANYA AGEN
+# ==============================================================================
+with tab4:
+    st.subheader("💬 Tanya Agen Kertas Kerja")
+    st.caption(
+        "Ajukan pertanyaan seputar saldo, varians, WP Ref, atau ketersediaan bukti berdasarkan kertas kerja aktif."
+    )
+
+    for item in st.session_state["chat_history"]:
+        with st.chat_message(item["role"]):
+            st.markdown(item["content"])
+
+    question = st.chat_input(
+        "Contoh: Akun mana yang bertanda '?' dan berapa selisihnya dibanding budget?"
+    )
+    if question:
+        st.session_state["chat_history"].append({"role": "user", "content": question})
+        with st.chat_message("user"):
+            st.markdown(question)
+
+        system_prompt_chat = f"""Anda adalah asisten audit Auditraa. Jawab pertanyaan pengguna HANYA berdasarkan data kertas kerja berikut.
+ATURAN KETAT:
+- Sertakan WP Ref setiap kali menyebut akun.
+- Gunakan angka persis sesuai JSON; jangan mengarang angka.
+- Jika bukti tidak ada, tulis "BUKTI BELUM TERSEDIA".
+- Jangan menuduh kecurangan atau memberikan opini audit final.
+
+Klien: {client_name} | Periode: {period} | Materialitas: Rp {materiality:,.0f}
+Data Kertas Kerja (JSON):
+{payload_json}"""
+
+        with st.chat_message("assistant"):
+            with st.spinner("Menjawab berdasarkan kertas kerja..."):
+                reply = call_llm(system_prompt_chat, question)
+                st.markdown(reply)
+
+        st.session_state["chat_history"].append({"role": "assistant", "content": reply})
