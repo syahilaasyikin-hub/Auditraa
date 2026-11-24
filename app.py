@@ -22,7 +22,8 @@ from audit_logic import (
 load_dotenv()
 
 MODEL_NAME = "gemini-3.8-flash"
-FALLBACK_MODELS = ["gemini-3.8-flash", "gemini-2.5-flash"]
+# PERBAIKAN: Menghapus gemini-2.5-flash (404 NOT FOUND) dan menggantinya dengan model fallback yang aktif
+FALLBACK_MODELS = ["gemini-3.8-flash", "gemini-3.5-flash-lite"]
 
 st.set_page_config(
     page_title="Auditraa — Dari Angka ke Bukti, Otomatis Terdokumentasi",
