@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -20,7 +21,11 @@ from audit_logic import (
 
 load_dotenv()
 
-MODEL_NAME = "gemini-3.8-flash"
+MODEL_CANDIDATES = [
+    "gemini-3.8-flash",
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+]
 
 st.set_page_config(
     page_title="Auditraa — Analisis Kertas Kerja Audit",
@@ -58,8 +63,49 @@ def get_gemini_client() -> genai.Client | None:
     return _cached_gemini_client(api_key)
 
 
-def call_llm(system_prompt: str, user_prompt: str) -> str:
-    """Memanggil Gemini API sekali secara cepat tanpa loop/jeda panjang."""
+def _offline_deterministic_analysis(
+    wp_df: pd.DataFrame,
+    client_name: str,
+    period: str,
+    materiality: float,
+    selected_scope: str,
+) -> str:
+    """Cadangan analisis deterministik dari kode jika seluruh model Gemini sedang 503."""
+    lines = [
+        "**[DRAFT ANALISIS CADANGAN (NON-LLM) — PERLU REVIEW AUDITOR]**",
+        f"_Catatan: Server Gemini sedang mengalami lonjakan beban (503 UNAVAILABLE), sehingga ditampilkan ringkasan otomatis dari hasil perhitungan kode._",
+        "",
+        f"- **Klien / Periode:** {client_name} ({period})",
+        f"- **Ambang Materialitas:** Rp {materiality:,.0f}",
+    ]
+    if selected_scope == "Semua Akun (Analisis Menyeluruh)":
+        target_df = wp_df
+    else:
+        wp_code = selected_scope.split(" — ")[0].strip()
+        target_df = wp_df[wp_df["WP_Ref"] == wp_code]
+
+    for _, row in target_df.iterrows():
+        ev = row["Evidence_Ref"] if row["Evidence_Ref"] else "BUKTI BELUM TERSEDIA"
+        lines.append(
+            f"- **{row['WP_Ref']} — {row['Category']}:** Budget Rp {row['Budget']:,.0f}, "
+            f"Actual Rp {row['Actual']:,.0f}, Variance Rp {row['Variance']:,.0f} "
+            f"({row['Variance_Pct']:.2f}%), Severity: **{row['Severity']}**, "
+            f"Tick Mark: `{row['Tick_Mark']}`, Bukti: `{ev}`."
+        )
+    return "
+".join(lines)
+
+
+def call_llm(
+    system_prompt: str,
+    user_prompt: str,
+    fallback_df: pd.DataFrame | None = None,
+    client_name: str = "",
+    period: str = "",
+    materiality: float = 0.0,
+    selected_scope: str = "Semua Akun (Analisis Menyeluruh)",
+) -> str:
+    """Memanggil Gemini API dengan pindah model cepat saat 503 dan cadangan otomatis jika semua sibuk."""
     client = get_gemini_client()
     if client is None:
         return (
@@ -67,19 +113,43 @@ def call_llm(system_prompt: str, user_prompt: str) -> str:
             "Tambahkan `GEMINI_API_KEY` ke file `.env` (untuk lokal) atau ke **Settings → Secrets** "
             "di Streamlit Community Cloud."
         )
-    try:
-        response = client.models.generate_content(
-            model=MODEL_NAME,
-            contents=user_prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=system_prompt,
-                temperature=0,
-            ),
-        )
-        content = response.text
-        return content.strip() if content else "⚠️ Model tidak mengembalikan teks."
-    except Exception as exc:
-        return f"⚠️ Terjadi kesalahan saat memanggil Gemini API: `{exc}`"
+
+    last_exc: Exception | None = None
+    for model_id in MODEL_CANDIDATES:
+        for attempt in range(2):
+            try:
+                response = client.models.generate_content(
+                    model=model_id,
+                    contents=user_prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_prompt,
+                        temperature=0,
+                    ),
+                )
+                content = response.text
+                if content and content.strip():
+                    return content.strip()
+            except Exception as exc:
+                last_exc = exc
+                err_str = str(exc)
+                is_overload = (
+                    "503" in err_str
+                    or "UNAVAILABLE" in err_str
+                    or "429" in err_str
+                    or "RESOURCE_EXHAUSTED" in err_str
+                    or "high demand" in err_str.lower()
+                )
+                if is_overload and attempt == 0:
+                    time.sleep(0.6)
+                    continue
+                break
+
+    if fallback_df is not None:
+        return _offline_deterministic_analysis(
+            fallback_df, client_name, period, materiality, selected_scope
+        ) + f"\n\n_Detail error terakhir: `{last_exc}`_"
+
+    return f"⚠️ Server Gemini sedang sibuk (`503 UNAVAILABLE`). Silakan coba lagi beberapa saat: `{last_exc}`"
 
 
 def init_session_state() -> None:
@@ -269,7 +339,15 @@ Data (JSON):
 {target_json}"""
 
     with st.spinner("Menganalisis hasil..."):
-        st.session_state["ai_analysis"] = call_llm(sys_prompt, usr_prompt)
+        st.session_state["ai_analysis"] = call_llm(
+            sys_prompt,
+            usr_prompt,
+            fallback_df=wp_df,
+            client_name=client_name,
+            period=period,
+            materiality=float(materiality),
+            selected_scope=selected_scope,
+        )
 
 if st.session_state["ai_analysis"]:
     is_ok, alien_nums = check_numbers(st.session_state["ai_analysis"], wp_df, float(materiality))
@@ -279,7 +357,6 @@ if st.session_state["ai_analysis"]:
         st.error(f"🚨 **Peringatan Pemeriksa Angka:** Ada angka di analisis yang tidak ada di data sumber: `{', '.join(alien_nums)}`.")
     st.markdown(st.session_state["ai_analysis"])
 
-# Unduh Excel sederhana (hanya tabel kertas kerja)
 excel_simple = export_audit_excel(
     df=wp_df,
     findings_text=st.session_state["ai_analysis"],
