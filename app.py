@@ -4,7 +4,8 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 from dotenv import load_dotenv
-from groq import Groq
+from google import genai
+from google.genai import types
 from streamlit.errors import StreamlitSecretNotFoundError
 
 from audit_logic import (
@@ -19,7 +20,7 @@ from audit_logic import (
 
 load_dotenv()
 
-MODEL_NAME = "openai/gpt-oss-20b"
+MODEL_NAME = "gemini-2.5-flash"
 
 st.set_page_config(
     page_title="Auditraa — Dari Angka ke Bukti, Otomatis Terdokumentasi",
@@ -29,13 +30,13 @@ st.set_page_config(
 
 
 def get_api_key() -> str | None:
-    """Mengambil GROQ_API_KEY dari environment (.env) atau Streamlit Secrets dengan aman."""
-    env_key = os.getenv("GROQ_API_KEY")
+    """Mengambil GEMINI_API_KEY dari environment (.env) atau Streamlit Secrets dengan aman."""
+    env_key = os.getenv("GEMINI_API_KEY")
     if env_key and env_key.strip():
         return env_key.strip()
 
     try:
-        secret_key = st.secrets.get("GROQ_API_KEY")
+        secret_key = st.secrets.get("GEMINI_API_KEY")
         if secret_key and str(secret_key).strip():
             return str(secret_key).strip()
     except (StreamlitSecretNotFoundError, AttributeError, KeyError, Exception):
@@ -44,41 +45,42 @@ def get_api_key() -> str | None:
     return None
 
 
-def get_groq_client() -> Groq | None:
-    """Membuat instance Groq client jika API key tersedia."""
+def get_gemini_client() -> genai.Client | None:
+    """Membuat instance Gemini client jika API key tersedia."""
     api_key = get_api_key()
     if not api_key:
         return None
-    return Groq(api_key=api_key)
+    return genai.Client(api_key=api_key)
 
 
 def call_llm(system_prompt: str, user_prompt: str) -> str:
-    """Memanggil Groq API dengan temperature=0 untuk hasil yang lebih stabil."""
-    client = get_groq_client()
+    """Memanggil Gemini API dengan temperature=0 untuk hasil yang stabil."""
+    client = get_gemini_client()
     if client is None:
         return (
-            "⚠️ **GROQ_API_KEY belum dikonfigurasi.**\n\n"
-            "Tambahkan `GROQ_API_KEY` ke file `.env` (untuk lokal) atau ke **Settings → Secrets** "
+            "⚠️ **GEMINI_API_KEY belum dikonfigurasi.**\n\n"
+            "Tambahkan `GEMINI_API_KEY` ke file `.env` (untuk lokal) atau ke **Settings → Secrets** "
             "di Streamlit Community Cloud."
         )
     try:
-        response = client.chat.completions.create(
+        response = client.models.generate_content(
             model=MODEL_NAME,
-            temperature=0,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
+            contents=user_prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                temperature=0,
+            ),
         )
-        content = response.choices[0].message.content
+        content = response.text
         return content.strip() if content else "⚠️ Model tidak mengembalikan teks."
     except Exception as exc:
-        return f"⚠️ Terjadi kesalahan saat memanggil Groq API: `{exc}`"
+        return f"⚠️ Terjadi kesalahan saat memanggil Gemini API: `{exc}`"
 
 
 def init_session_state() -> None:
     """Inisialisasi state aplikasi di session_state."""
     defaults = {
+        "ai_explanation": "",
         "findings_draft": "",
         "mgmt_letter_draft": "",
         "chat_history": [],
@@ -90,7 +92,8 @@ def init_session_state() -> None:
 
 
 def reset_generated_outputs() -> None:
-    """Membersihkan draf narasi dan chat saat dataset baru dimuat."""
+    """Membersihkan draf narasi, penjelasan AI, dan chat saat dataset baru dimuat."""
+    st.session_state["ai_explanation"] = ""
     st.session_state["findings_draft"] = ""
     st.session_state["mgmt_letter_draft"] = ""
     st.session_state["chat_history"] = []
@@ -206,7 +209,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
 ])
 
 # ==============================================================================
-# TAB 1: KERTAS KERJA
+# TAB 1: KERTAS KERJA + PENJELASAN HASIL OLEH AI
 # ==============================================================================
 with tab1:
     st.subheader(f"Lead Schedule — {client_name} ({period})")
@@ -291,6 +294,81 @@ with tab1:
     )
     fig.update_traces(textposition="outside")
     st.plotly_chart(fig, use_container_width=True)
+
+    # --- PENJELASAN HASIL KERTAS KERJA OLEH AI ---
+    st.divider()
+    st.markdown("### 🤖 Penjelasan Hasil Kertas Kerja oleh AI (Draft)")
+    st.caption(
+        "AI membantu menjelaskan arti selisih (Budget vs Actual), tingkat Severity, Tick Mark, "
+        "dan kelengkapan bukti berdasarkan hasil hitung kode—bukan opini audit final."
+    )
+
+    account_options = ["Semua Akun (Ringkasan Kertas Kerja)"] + [
+        f"{row['WP_Ref']} — {row['Category']}" for _, row in wp_df.iterrows()
+    ]
+    selected_scope = st.selectbox(
+        "Pilih cakupan penjelasan:",
+        options=account_options,
+        key="explain_scope_select",
+    )
+
+    if st.button("🧠 Jelaskan Hasil Kertas Kerja", key="btn_explain_wp"):
+        if selected_scope == "Semua Akun (Ringkasan Kertas Kerja)":
+            target_payload = payload_json
+            scope_instruction = (
+                "Jelaskan secara ringkas dan jelas gambaran umum hasil kertas kerja seluruh akun: "
+                "akun dengan selisih terbesar, akun ber-Severity High/Medium, serta akun bertanda '?' "
+                "(BUKTI BELUM TERSEDIA)."
+            )
+        else:
+            selected_wp = selected_scope.split(" — ")[0].strip()
+            filtered_df = wp_df[wp_df["WP_Ref"] == selected_wp]
+            target_payload = json.dumps(
+                build_llm_payload(filtered_df, client_name, period, float(materiality)),
+                indent=2,
+                ensure_ascii=False,
+            )
+            scope_instruction = (
+                f"Jelaskan secara rinci hasil perhitungan untuk akun **{selected_scope}**: "
+                "arti angka Budget, Actual, Variance, dan Variance %, alasan penetapan Severity & Tick Mark, "
+                "serta status Evidence_Ref (jika kosong wajib tulis 'BUKTI BELUM TERSEDIA')."
+            )
+
+        system_prompt_explain = """Anda adalah asisten auditor yang menjelaskan hasil perhitungan kertas kerja audit dalam Bahasa Indonesia yang jelas dan terstruktur.
+ATURAN KETAT:
+1. Awali penjelasan dengan label: **[DRAFT PENJELASAN HASIL - WAJIB REVIEW AUDITOR]**.
+2. HANYA gunakan angka yang persis ada pada data JSON sumber. DILARANG menghitung ulang, mengubah angka, atau mengarang angka baru.
+3. Selalu sertakan WP Ref saat merujuk akun.
+4. Jika bukti kosong, tulis persis "BUKTI BELUM TERSEDIA".
+5. DILARANG menuduh kecurangan atau menyatakan opini audit."""
+
+        user_prompt_explain = f"""Klien: **{client_name}** | Periode: **{period}** | Materialitas: **Rp {materiality:,.0f}**
+Tugas: {scope_instruction}
+
+Data Hasil Hitung Kode (JSON):
+{target_payload}"""
+
+        with st.spinner("Menyusun penjelasan hasil kertas kerja..."):
+            st.session_state["ai_explanation"] = call_llm(
+                system_prompt_explain,
+                user_prompt_explain,
+            )
+
+    if st.session_state["ai_explanation"]:
+        is_ok_exp, alien_nums_exp = check_numbers(
+            st.session_state["ai_explanation"],
+            wp_df,
+            float(materiality),
+        )
+        if is_ok_exp:
+            st.success("✅ **Pemeriksa Angka:** Seluruh angka pada penjelasan AI cocok dengan data sumber.")
+        else:
+            st.error(
+                f"🚨 **Peringatan Pemeriksa Angka:** Ditemukan angka pada penjelasan yang tidak ada di data sumber: "
+                f"`{', '.join(alien_nums_exp)}`."
+            )
+
+        st.markdown(st.session_state["ai_explanation"])
 
 # ==============================================================================
 # TAB 2: RINGKASAN TEMUAN
