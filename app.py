@@ -20,7 +20,7 @@ from audit_logic import (
 
 load_dotenv()
 
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "gemini-3.8-flash"
 
 st.set_page_config(
     page_title="Auditraa — Dari Angka ke Bukti, Otomatis Terdokumentasi",
