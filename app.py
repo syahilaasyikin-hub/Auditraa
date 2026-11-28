@@ -26,21 +26,21 @@ MODEL_NAME = "gemini-3.8-flash"
 FALLBACK_MODELS = ["gemini-3.8-flash", "gemini-3.5-flash-lite"]
 
 st.set_page_config(
-    page_title="Auditraa | Premium Audit Dashboard",
-    page_icon="💎",
+    page_title="Auditraa | Smart Audit Engine",
+    page_icon="✨",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # ==============================================================================
-# CSS PREMIUM: DARK GLASSMORPHISM, ROSE GOLD ACCENTS, & ANIMASI
+# CSS PREMIUM: MIDNIGHT BURGUNDY + CHAMPAGNE GOLD (GLASSMORPHISM & ANIMATIONS)
 # ==============================================================================
 custom_css = """
 <style>
-    /* Import Font Modern & Elegan */
+    /* Import Font Elegan & Modern */
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 
-    /* Base */
+    /* Base Styling */
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
     }
@@ -48,47 +48,129 @@ custom_css = """
         font-family: 'Outfit', sans-serif;
     }
     
-    /* Background Utama: Deep Burgundy Gradient */
+    /* Background Utama: Deep Midnight Burgundy */
     .stApp {
-        background: radial-gradient(circle at top left, #2c0606 0%, #0d0101 100%);
-        color: #e0e0e0;
+        background: radial-gradient(circle at top right, #2b0e0e 0%, #0d0303 100%);
+        color: #fcfbf9;
     }
 
-    /* Sidebar: Efek Kaca Gelap */
+    /* Sidebar: Dark Glass */
     [data-testid="stSidebar"] {
-        background: rgba(20, 2, 2, 0.6) !important;
-        backdrop-filter: blur(15px);
-        border-right: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(15, 3, 3, 0.7) !important;
+        backdrop-filter: blur(20px);
+        border-right: 1px solid rgba(212, 175, 55, 0.15);
     }
     
-    /* Sembunyikan Header Streamlit Bawaan */
+    /* Menyembunyikan Header Bawaan Streamlit */
     header {visibility: hidden;}
 
-    /* --- ANIMASI MASUK (FADE IN UP) --- */
-    @keyframes fadeUp {
+    /* --- ANIMASI GLOBAL --- */
+    @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
     }
     .block-container {
-        animation: fadeUp 0.6s ease-out forwards;
+        animation: fadeInUp 0.7s ease-out forwards;
     }
 
-    /* --- KARTU GLASSMORPHISM (BENTO BOX STYLE) --- */
-    div[data-testid="stVerticalBlockBorderWrapper"] {
-        background: rgba(45, 10, 10, 0.4) !important;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
-        border: 1px solid rgba(255, 215, 0, 0.15) !important; /* Aksen Rose Gold tipis */
-        border-radius: 16px !important;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4) !important;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    /* --- HEADER KUSTOM (Bento Style) --- */
+    .header-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 30px 40px;
+        background: linear-gradient(135deg, rgba(45, 10, 10, 0.6) 0%, rgba(20, 5, 5, 0.8) 100%);
+        backdrop-filter: blur(15px);
+        border-radius: 20px;
+        border: 1px solid rgba(212, 175, 55, 0.2);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        margin-bottom: 25px;
+        position: relative;
+        overflow: hidden;
+    }
+    .header-container::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; width: 4px; height: 100%;
+        background: linear-gradient(to bottom, #d4af37, #f3e5ab);
     }
     
-    /* Efek Hover pada Kartu */
+    .header-content h1 {
+        margin: 0;
+        font-size: 2.4rem;
+        font-weight: 700;
+        background: linear-gradient(to right, #ffffff, #e8d099, #d4af37);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -0.5px;
+    }
+    .header-content p {
+        margin: 8px 0 0 0;
+        color: #a3a3a3;
+        font-size: 1.05rem;
+        font-weight: 400;
+    }
+
+    /* --- ANIMASI VISUAL DI HEADER (RADAR DATA / AI CORE) --- */
+    .visual-core-container {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .core-orb {
+        width: 20px;
+        height: 20px;
+        background: #d4af37;
+        border-radius: 50%;
+        box-shadow: 0 0 20px #d4af37, 0 0 40px rgba(212, 175, 55, 0.5);
+        animation: pulseOrb 2s infinite alternate;
+        z-index: 2;
+    }
+    .core-ring-1 {
+        position: absolute;
+        width: 60px;
+        height: 60px;
+        border: 2px solid rgba(212, 175, 55, 0.2);
+        border-top: 2px solid #d4af37;
+        border-radius: 50%;
+        animation: spinRing 3s linear infinite;
+    }
+    .core-ring-2 {
+        position: absolute;
+        width: 80px;
+        height: 80px;
+        border: 1px dashed rgba(212, 175, 55, 0.3);
+        border-radius: 50%;
+        animation: spinRingReverse 5s linear infinite;
+    }
+    
+    @keyframes spinRing { 100% { transform: rotate(360deg); } }
+    @keyframes spinRingReverse { 100% { transform: rotate(-360deg); } }
+    @keyframes pulseOrb {
+        0% { transform: scale(1); box-shadow: 0 0 10px #d4af37; }
+        100% { transform: scale(1.3); box-shadow: 0 0 30px #d4af37, 0 0 50px rgba(212, 175, 55, 0.8); }
+    }
+
+    /* --- KARTU GLASSMORPHISM (Bento Grid) --- */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        background: linear-gradient(145deg, rgba(40, 10, 10, 0.5), rgba(15, 3, 3, 0.7)) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(212, 175, 55, 0.15) !important;
+        border-radius: 16px !important;
+        padding: 20px !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+        transition: all 0.3s ease !important;
+        animation: fadeInUp 0.6s ease-out;
+    }
+    
+    /* Hover Efek pada Kartu */
     div[data-testid="stVerticalBlockBorderWrapper"]:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 40px 0 rgba(0, 0, 0, 0.6), 0 0 15px 0 rgba(255, 215, 0, 0.1) !important;
-        border: 1px solid rgba(255, 215, 0, 0.3) !important;
+        transform: translateY(-4px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(212, 175, 55, 0.1) !important;
+        border: 1px solid rgba(212, 175, 55, 0.3) !important;
     }
 
     /* --- STYLING METRIK (KPI) --- */
@@ -97,94 +179,79 @@ custom_css = """
     }
     [data-testid="stMetricValue"] {
         color: #ffffff !important;
-        font-size: 2.2rem !important;
+        font-size: 2rem !important;
         font-weight: 700 !important;
         font-family: 'Outfit', sans-serif;
     }
     [data-testid="stMetricLabel"] {
-        color: #d4af37 !important; /* Rose Gold Text */
+        color: #d4af37 !important; /* Champagne Gold */
         font-weight: 600 !important;
         letter-spacing: 0.5px;
         text-transform: uppercase;
-        font-size: 0.85rem !important;
+        font-size: 0.8rem !important;
     }
 
-    /* --- TOMBOL ELEGAN (ROSE GOLD GRADIENT) --- */
+    /* --- TOMBOL PREMIUM (GOLD GRADIENT) --- */
     .stButton>button, .stDownloadButton>button {
-        background: linear-gradient(135deg, #b76e79 0%, #e8a87c 100%) !important;
-        color: #1a0505 !important; /* Teks gelap agar kontras */
+        background: linear-gradient(135deg, #d4af37 0%, #f3e5ab 100%) !important;
+        color: #1a0505 !important;
         border: none !important;
         border-radius: 10px !important;
         font-weight: 700 !important;
+        font-family: 'Outfit', sans-serif;
         padding: 10px 24px !important;
         transition: all 0.3s ease !important;
-        box-shadow: 0 4px 15px rgba(232, 168, 124, 0.2) !important;
+        box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2) !important;
     }
     .stButton>button:hover, .stDownloadButton>button:hover {
         transform: translateY(-2px) scale(1.02) !important;
-        box-shadow: 0 8px 25px rgba(232, 168, 124, 0.4) !important;
+        box-shadow: 0 8px 25px rgba(212, 175, 55, 0.5) !important;
         color: #000000 !important;
     }
 
-    /* --- TABS MODERN (PILL SHAPE) --- */
+    /* --- TABS MODERN --- */
     .stTabs [data-baseweb="tab-list"] {
         background-color: transparent;
         gap: 10px;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
+        border-bottom: 1px solid rgba(212, 175, 55, 0.2);
         padding-bottom: 10px;
     }
     .stTabs [data-baseweb="tab"] {
-        background: rgba(255, 255, 255, 0.03);
+        background: rgba(255, 255, 255, 0.02);
         border: 1px solid rgba(255, 255, 255, 0.05);
         border-radius: 8px;
         color: #a3a3a3;
-        padding: 8px 20px;
+        padding: 10px 20px;
         transition: all 0.3s;
+        font-weight: 500;
     }
     .stTabs [aria-selected="true"] {
-        background: rgba(232, 168, 124, 0.15);
-        border: 1px solid #e8a87c;
-        color: #ffffff !important;
+        background: rgba(212, 175, 55, 0.1);
+        border: 1px solid #d4af37;
+        color: #d4af37 !important;
         font-weight: 600;
+        box-shadow: 0 2px 10px rgba(212, 175, 55, 0.1);
     }
 
     /* --- INPUT FIELDS --- */
     .stTextInput>div>div>input, .stNumberInput>div>div>input, [data-testid="stFileUploadDropzone"] {
-        background-color: rgba(0, 0, 0, 0.2) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        background-color: rgba(0, 0, 0, 0.3) !important;
+        border: 1px solid rgba(212, 175, 55, 0.2) !important;
         border-radius: 8px !important;
         color: #ffffff !important;
+        transition: all 0.3s ease;
     }
     .stTextInput>div>div>input:focus, .stNumberInput>div>div>input:focus {
-        border-color: #e8a87c !important;
-        box-shadow: 0 0 0 2px rgba(232, 168, 124, 0.2) !important;
+        border-color: #d4af37 !important;
+        box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2) !important;
     }
-
-    /* --- HEADER KUSTOM --- */
-    .header-glass {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 20px 30px;
-        background: linear-gradient(90deg, rgba(45, 10, 10, 0.6) 0%, rgba(20, 2, 2, 0.2) 100%);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        border: 1px solid rgba(255, 215, 0, 0.1);
-        margin-bottom: 25px;
-        animation: fadeUp 0.5s ease-out;
-    }
-    .header-glass h1 {
-        margin: 0;
-        font-size: 2rem;
-        background: linear-gradient(to right, #ffffff, #e8a87c);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: 700;
-    }
-    .header-glass p {
-        margin: 5px 0 0 0;
-        color: #a3a3a3;
-        font-size: 0.95rem;
+    
+    /* Alert Box */
+    [data-testid="stAlert"] {
+        background-color: rgba(40, 10, 10, 0.8) !important;
+        border: 1px solid #d4af37 !important;
+        color: #fcfbf9 !important;
+        border-radius: 10px;
     }
 </style>
 """
@@ -192,7 +259,7 @@ st.markdown(custom_css, unsafe_allow_html=True)
 pio.templates.default = "plotly_dark"
 
 # ==============================================================================
-# FUNGSI LOGIKA (TIDAK BERUBAH)
+# FUNGSI LOGIKA BACKEND (TIDAK ADA PERUBAHAN)
 # ==============================================================================
 def get_api_key() -> str | None:
     env_key = os.getenv("GEMINI_API_KEY")
@@ -240,23 +307,23 @@ def reset_generated_outputs() -> None:
 init_session_state()
 
 # ==============================================================================
-# SIDEBAR: CONTROL PANEL
+# SIDEBAR: PREMIUM CONTROL PANEL
 # ==============================================================================
 with st.sidebar:
     st.markdown("""
-        <div style="margin-bottom: 20px;">
-            <h2 class="brand-title" style="color: #ffffff; margin:0;">💎 Auditraa</h2>
-            <p style="color: #d4af37; font-size: 0.8rem; letter-spacing: 1px;">PREMIUM AUDIT SUITE</p>
+        <div style="margin-bottom: 25px; text-align: center;">
+            <h2 class="brand-title" style="color: #ffffff; margin:0; font-size: 2rem;">Auditraa<span style="color:#d4af37;">.</span></h2>
+            <p style="color: #d4af37; font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;">Smart Audit Engine</p>
         </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("---")
+    st.markdown("<div style='border-bottom: 1px solid rgba(212,175,55,0.2); margin-bottom: 20px;'></div>", unsafe_allow_html=True)
     st.markdown("### ⚙️ Parameter Audit")
     client_name = st.text_input("Nama Entitas / Klien", value="PT Nusantara Sejahtera Tbk")
     period = st.text_input("Periode Audit", value="Tahun Buku 2025")
     materiality = st.number_input("Ambang Materialitas (Rp)", min_value=1_000_000, max_value=100_000_000_000, value=50_000_000, step=5_000_000, format="%d")
 
-    st.markdown("---")
+    st.markdown("<div style='border-bottom: 1px solid rgba(212,175,55,0.2); margin: 20px 0;'></div>", unsafe_allow_html=True)
     st.markdown("### 📂 Manajemen Data")
     uploaded_file = st.file_uploader("Unggah file (.xlsx)", type=["xlsx"])
     
@@ -271,19 +338,23 @@ with st.sidebar:
         use_container_width=True,
     )
 
-    st.markdown("---")
-    st.caption("🛡️ **Keamanan:** Gunakan data fiktif untuk pengujian.")
+    st.markdown("<div style='border-bottom: 1px solid rgba(212,175,55,0.2); margin: 20px 0;'></div>", unsafe_allow_html=True)
+    st.caption("🛡️ **Keamanan:** Jangan unggah data klien riil tanpa izin. Gunakan data fiktif untuk pengujian.")
 
 # ==============================================================================
-# HEADER MAIN AREA
+# HEADER MAIN AREA (DENGAN ANIMASI RADAR CORE)
 # ==============================================================================
 st.markdown("""
-<div class="header-glass">
-    <div>
-        <h1>Dashboard Kertas Kerja</h1>
-        <p>Sistem deteksi anomali saldo dan penyusunan draf audit berbasis AI.</p>
+<div class="header-container">
+    <div class="header-content">
+        <h1>Auditraa: Smart Audit Engine</h1>
+        <p>Sistem Cerdas Deteksi Anomali Saldo & Penyusunan Draf Audit.</p>
     </div>
-    <div style="font-size: 2.5rem;">⚖️</div>
+    <div class="visual-core-container">
+        <div class="core-ring-2"></div>
+        <div class="core-ring-1"></div>
+        <div class="core-orb"></div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -300,7 +371,7 @@ elif st.session_state["use_demo_data"]:
     except Exception as exc: st.error(f"❌ Gagal memuat demo: `{exc}`"); st.stop()
 
 if raw_df is None or raw_df.empty:
-    st.info("👋 **Selamat Datang!** Silakan unggah file Excel (.xlsx) melalui panel di sebelah kiri, atau klik **Muat Data Demo** untuk melihat kekuatan sistem.")
+    st.info("👋 **Selamat Datang di Auditraa.** Silakan unggah file Excel (.xlsx) melalui panel di sebelah kiri, atau klik **Muat Data Demo** untuk melihat simulasi kerja sistem.")
     st.stop()
 
 is_valid, missing_cols = validate_columns(raw_df)
@@ -320,7 +391,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
 ])
 
 # ------------------------------------------------------------------------------
-# TAB 1: KERTAS KERJA (BENTO GRID LAYOUT)
+# TAB 1: KERTAS KERJA (DASHBOARD UTAMA)
 # ------------------------------------------------------------------------------
 with tab1:
     # KPI Cards (Glassmorphism)
@@ -341,7 +412,7 @@ with tab1:
 
     st.write("")
 
-    # Area Tabel & Grafik
+    # Tabel & Grafik
     col_left, col_right = st.columns([1.2, 1])
     
     with col_left:
@@ -360,9 +431,10 @@ with tab1:
     with col_right:
         with st.container(border=True):
             st.markdown("#### 📈 Analisis Varians")
+            # Warna grafik disesuaikan dengan tema Burgundy & Gold
             fig = px.bar(
                 wp_df, x="Category", y="Variance", color="Severity", text="WP_Ref",
-                color_discrete_map={"High": "#ff4d4d", "Medium": "#f4a261", "Low": "#2a9d8f"},
+                color_discrete_map={"High": "#ff4d4d", "Medium": "#d4af37", "Low": "#2a9d8f"},
                 labels={"Category": "", "Variance": "Selisih [Rp]", "Severity": ""},
             )
             fig.update_layout(
