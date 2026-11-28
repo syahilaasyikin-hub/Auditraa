@@ -33,7 +33,7 @@ st.set_page_config(
 )
 
 # ==============================================================================
-# CSS PREMIUM: PARALLAX, STARS, INTERACTIVE 3D ILLUSTRATION, & GLASSMORPHISM
+# CSS PREMIUM: PARALLAX, STARS, INTERACTIVE 3D AUDIT ILLUSTRATION
 # ==============================================================================
 custom_css = """
 <style>
@@ -155,63 +155,104 @@ custom_css = """
         font-size: 1.1rem;
     }
 
-    /* ILUSTRASI 3D INTERAKTIF (CSS ART) */
+    /* ======================================================================== */
+    /* ILUSTRASI 3D AUDIT (DOKUMEN & KACA PEMBESAR)                             */
+    /* ======================================================================== */
     .illustration-wrapper {
-        width: 200px; height: 200px;
-        perspective: 800px;
+        width: 220px; height: 220px;
+        perspective: 1000px;
         z-index: 2;
         position: relative;
+        display: flex; align-items: center; justify-content: center;
     }
     .illustration-float {
         width: 100%; height: 100%;
-        animation: floatAnim 4s ease-in-out infinite;
+        animation: floatAnim 6s ease-in-out infinite;
         transform-style: preserve-3d;
-    }
-    @keyframes floatAnim {
-        0%, 100% { transform: translateY(0) rotateX(10deg) rotateY(-10deg); }
-        50% { transform: translateY(-15px) rotateX(15deg) rotateY(10deg); }
+        position: relative;
     }
     
-    /* Hover Effect */
+    /* Animasi Melayang */
+    @keyframes floatAnim {
+        0%, 100% { transform: translateY(0) rotateX(20deg) rotateY(-20deg); }
+        50% { transform: translateY(-15px) rotateX(25deg) rotateY(-10deg); }
+    }
+    
+    /* Efek Hover (Membesar & Memutar) */
     .illustration-wrapper:hover .illustration-float {
         animation-play-state: paused;
-        transform: scale(1.1) rotateY(20deg) rotateX(20deg);
-        transition: transform 0.5s ease;
+        transform: scale(1.15) rotateX(10deg) rotateY(10deg) translateZ(50px);
+        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
-    /* Elemen Visual Ilustrasi */
-    .chart-base {
-        position: absolute; bottom: 20px; left: 20px;
-        width: 160px; height: 120px;
-        background: rgba(232, 168, 124, 0.1);
-        border: 1px solid rgba(232, 168, 124, 0.3);
-        border-radius: 12px;
-        transform: rotateX(60deg) translateZ(-20px);
-        box-shadow: 0 10px 30px rgba(232, 168, 124, 0.2);
+    /* Dokumen Laporan Keuangan */
+    .audit-doc {
+        position: absolute;
+        width: 120px; height: 150px;
+        background: linear-gradient(135deg, rgba(60, 15, 15, 0.9), rgba(30, 5, 5, 0.9));
+        border: 2px solid rgba(232, 168, 124, 0.5);
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(232, 168, 124, 0.1);
+        top: 15px; left: 20px;
+        padding: 15px;
+        transform: translateZ(0);
     }
-    .bar {
-        position: absolute; bottom: 0;
-        background: linear-gradient(to top, #e8a87c, #fdfbf7);
-        border-radius: 4px 4px 0 0;
-        box-shadow: 0 0 15px #e8a87c;
+    .doc-line { width: 100%; height: 6px; background: rgba(232, 168, 124, 0.3); border-radius: 3px; margin-bottom: 8px; }
+    .doc-line.short { width: 60%; }
+    .doc-chart {
+        position: absolute; bottom: 15px; left: 15px; right: 15px; height: 60px;
+        display: flex; align-items: flex-end; gap: 8px;
     }
-    .bar-1 { left: 30px; width: 20px; height: 40px; animation: growBar 2s ease-in-out infinite alternate; }
-    .bar-2 { left: 70px; width: 20px; height: 80px; animation: growBar 2s ease-in-out infinite alternate 0.5s; }
-    .bar-3 { left: 110px; width: 20px; height: 60px; animation: growBar 2s ease-in-out infinite alternate 1s; }
-    @keyframes growBar { 0% { transform: scaleY(0.5); } 100% { transform: scaleY(1); } }
+    .doc-bar {
+        flex: 1; background: linear-gradient(to top, #e8a87c, #fdfbf7);
+        border-radius: 3px 3px 0 0;
+        box-shadow: 0 0 10px rgba(232, 168, 124, 0.5);
+    }
+    .doc-bar.b1 { height: 40%; }
+    .doc-bar.b2 { height: 80%; }
+    .doc-bar.b3 { height: 60%; }
+
+    /* Kaca Pembesar (Magnifying Glass) */
+    .audit-magnifier {
+        position: absolute;
+        width: 80px; height: 80px;
+        top: 20px; right: 10px;
+        transform: translateZ(40px);
+        animation: scanAction 4s ease-in-out infinite alternate;
+    }
     
-    /* Orbiting Ring */
-    .ring {
-        position: absolute; top: 50%; left: 50%;
-        width: 140px; height: 140px;
-        border: 2px solid rgba(232, 168, 124, 0.4);
-        border-top: 2px solid #e8a87c;
-        border-radius: 50%;
-        transform: translate(-50%, -50%) rotateX(70deg);
-        animation: spinRing 6s linear infinite;
-        box-shadow: 0 0 20px rgba(232, 168, 124, 0.2);
+    /* Animasi Memindai Dokumen */
+    @keyframes scanAction {
+        0% { transform: translateZ(40px) translate(0, 0) rotate(-10deg); }
+        100% { transform: translateZ(40px) translate(-30px, 40px) rotate(15deg); }
     }
-    @keyframes spinRing { 100% { transform: translate(-50%, -50%) rotateX(70deg) rotateZ(360deg); } }
+    
+    .glass-lens {
+        width: 60px; height: 60px;
+        border: 4px solid #e8a87c;
+        border-radius: 50%;
+        background: rgba(232, 168, 124, 0.1);
+        box-shadow: 0 0 15px rgba(232, 168, 124, 0.4), inset 0 0 10px rgba(232, 168, 124, 0.2);
+        position: relative;
+        backdrop-filter: blur(2px);
+    }
+    /* Efek Pantulan Cahaya Lensa */
+    .glass-lens::after {
+        content: ''; position: absolute;
+        top: 10px; left: 10px; width: 15px; height: 8px;
+        background: rgba(255, 255, 255, 0.4);
+        border-radius: 50%; transform: rotate(-45deg);
+    }
+    /* Gagang Kaca Pembesar */
+    .glass-handle {
+        position: absolute;
+        width: 10px; height: 30px;
+        background: linear-gradient(to bottom, #e8a87c, #a05c3b);
+        border-radius: 5px;
+        bottom: -10px; right: -5px;
+        transform: rotate(-45deg);
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+    }
 
     /* Card Glassmorphism */
     div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -387,7 +428,7 @@ with st.sidebar:
     st.caption("🛡️ **Keamanan:** Jangan unggah data klien riil tanpa izin.")
 
 # ==============================================================================
-# HEADER MAIN AREA (DENGAN ILUSTRASI INTERAKTIF)
+# HEADER MAIN AREA (DENGAN ILUSTRASI DOKUMEN AUDIT & KACA PEMBESAR)
 # ==============================================================================
 st.markdown("""
 <div class="header-container">
@@ -395,15 +436,23 @@ st.markdown("""
         <h1>Auditraa: Smart Audit Engine</h1>
         <p>Sistem Cerdas Deteksi Anomali Saldo & Penyusunan Draf Audit.</p>
     </div>
-    <!-- Ilustrasi 3D Interaktif -->
+    <!-- Ilustrasi 3D Interaktif: Dokumen Keuangan & Kaca Pembesar -->
     <div class="illustration-wrapper">
         <div class="illustration-float">
-            <div class="chart-base">
-                <div class="bar bar-1"></div>
-                <div class="bar bar-2"></div>
-                <div class="bar bar-3"></div>
+            <div class="audit-doc">
+                <div class="doc-line"></div>
+                <div class="doc-line short"></div>
+                <div class="doc-line"></div>
+                <div class="doc-chart">
+                    <div class="doc-bar b1"></div>
+                    <div class="doc-bar b2"></div>
+                    <div class="doc-bar b3"></div>
+                </div>
             </div>
-            <div class="ring"></div>
+            <div class="audit-magnifier">
+                <div class="glass-lens"></div>
+                <div class="glass-handle"></div>
+            </div>
         </div>
     </div>
 </div>
