@@ -63,10 +63,10 @@ custom_css = """
         z-index: -1;
         overflow: hidden;
         background: radial-gradient(circle at top right, #3d0a0a 0%, #120101 100%);
-        perspective: 1000px; /* Untuk efek 3D/parallax */
+        perspective: 1000px;
     }
     
-    /* 1. Data Grid (Garis tipis seperti kertas grafik) */
+    /* 1. Data Grid */
     .data-grid {
         position: absolute;
         top: -50%; left: -50%; width: 200%; height: 200%;
@@ -110,7 +110,6 @@ custom_css = """
     /* UI ELEMENTS                                                              */
     /* ======================================================================== */
 
-    /* Animasi Masuk Konten */
     @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
@@ -166,7 +165,6 @@ custom_css = """
         display: flex; align-items: center; justify-content: center;
     }
     
-    /* Kubus Data Holografik */
     .cube-container {
         width: 90px; height: 90px;
         position: absolute;
@@ -175,20 +173,17 @@ custom_css = """
         transition: all 0.5s ease;
     }
     
-    /* Animasi Rotasi Kubus */
     @keyframes rotateCube {
         0% { transform: rotateX(-20deg) rotateY(0deg); }
         100% { transform: rotateX(-20deg) rotateY(360deg); }
     }
 
-    /* Efek Hover Interaktif: Kubus Berhenti, Membesar, dan Memiringkan Sisi */
     .illustration-wrapper:hover .cube-container {
         animation-play-state: paused;
         transform: rotateX(-10deg) rotateY(45deg) scale(1.2);
         filter: drop-shadow(0 0 20px rgba(232, 168, 124, 0.8));
     }
 
-    /* Sisi-Sisi Kubus */
     .cube-face {
         position: absolute; width: 90px; height: 90px;
         background: rgba(60, 15, 15, 0.85);
@@ -203,19 +198,15 @@ custom_css = """
     .face-top    { transform: rotateX(90deg) translateZ(45px); display: flex; align-items: center; justify-content: center; }
     .face-bottom { transform: rotateX(-90deg) translateZ(45px); }
 
-    /* Elemen di Dalam Kubus */
-    /* 1. Grafik Batang (Sisi Depan) */
     .cube-bar { width: 12px; background: linear-gradient(to top, #d4af37, #fdfbf7); border-radius: 2px 2px 0 0; box-shadow: 0 0 8px #e8a87c; }
     .cube-bar.b1 { height: 25px; }
     .cube-bar.b2 { height: 50px; animation: pulseBar 1.5s infinite alternate; }
     .cube-bar.b3 { height: 35px; animation: pulseBar 1.5s infinite alternate 0.5s; }
     @keyframes pulseBar { 0% { height: 20px; } 100% { height: 50px; } }
 
-    /* 2. Garis Teks Laporan (Sisi Kanan) */
     .cube-line { width: 100%; height: 4px; background: rgba(232, 168, 124, 0.5); border-radius: 2px; }
     .cube-line.short { width: 60%; }
 
-    /* 3. Inti AI (Sisi Atas) */
     .cube-core {
         width: 30px; height: 30px;
         background: #e8a87c;
@@ -225,7 +216,6 @@ custom_css = """
     }
     @keyframes pulseCore { 0% { transform: scale(0.8); } 100% { transform: scale(1.2); } }
 
-    /* Cincin Orbit Emas yang Mengelilingi Kubus */
     .orbit-ring {
         position: absolute;
         width: 160px; height: 160px;
@@ -283,11 +273,10 @@ custom_css = """
 st.markdown(custom_css, unsafe_allow_html=True)
 
 # ==============================================================================
-# INJEKSI HTML UNTUK BACKGROUND (BINTANG, PARALLAX BLOBS, GRID)
+# INJEKSI HTML UNTUK BACKGROUND
 # ==============================================================================
 import random
 
-# Generate bintang secara dinamis
 stars_html = ""
 for _ in range(40):
     top = random.randint(0, 100)
@@ -309,7 +298,6 @@ background_html = f"""
 """
 st.markdown(background_html, unsafe_allow_html=True)
 
-# Script untuk efek Parallax pada Background saat mouse bergerak
 parallax_script = """
 <script>
 document.addEventListener('mousemove', (e) => {
@@ -328,7 +316,7 @@ st.markdown(parallax_script, unsafe_allow_html=True)
 pio.templates.default = "plotly_dark"
 
 # ==============================================================================
-# FUNGSI LOGIKA BACKEND (TIDAK ADA PERUBAHAN)
+# FUNGSI LOGIKA BACKEND
 # ==============================================================================
 def get_api_key() -> str | None:
     env_key = os.getenv("GEMINI_API_KEY")
@@ -364,6 +352,35 @@ def call_llm(system_prompt: str, user_prompt: str) -> str:
                     time.sleep(1.5 * (attempt + 1)); continue
                 break
     return f"⚠️ Server Gemini sibuk: `{last_exc}`"
+
+# --- FUNGSI BARU: STREAMING UNTUK EFEK MENGETIK ---
+def call_llm_stream(system_prompt: str, user_prompt: str):
+    client = get_gemini_client()
+    if client is None:
+        yield "⚠️ **GEMINI_API_KEY belum dikonfigurasi.**"
+        return
+    
+    models_to_try = list(dict.fromkeys([MODEL_NAME] + FALLBACK_MODELS))
+    last_exc = None
+    
+    for model_id in models_to_try:
+        for attempt in range(3):
+            try:
+                response = client.models.generate_content_stream(
+                    model=model_id, contents=user_prompt,
+                    config=types.GenerateContentConfig(system_instruction=system_prompt, temperature=0),
+                )
+                for chunk in response:
+                    if chunk.text:
+                        yield chunk.text
+                return # Berhasil
+            except Exception as exc:
+                last_exc = exc
+                if any(err in str(exc) for err in ["503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED"]) and attempt < 2:
+                    time.sleep(1.5 * (attempt + 1))
+                    continue
+                break
+    yield f"⚠️ Server Gemini sibuk: `{last_exc}`"
 
 def init_session_state() -> None:
     defaults = {"ai_explanation": "", "findings_draft": "", "mgmt_letter_draft": "", "chat_history": [], "use_demo_data": False}
@@ -411,7 +428,7 @@ with st.sidebar:
     st.caption("🛡️ **Keamanan:** Jangan unggah data klien riil tanpa izin.")
 
 # ==============================================================================
-# HEADER MAIN AREA (DENGAN ILUSTRASI HOLOGRAPHIC DATA CUBE)
+# HEADER MAIN AREA
 # ==============================================================================
 st.markdown("""
 <div class="header-container">
@@ -419,7 +436,6 @@ st.markdown("""
         <h1>Auditraa: Smart Audit Engine</h1>
         <p>Sistem Cerdas Deteksi Anomali Saldo & Penyusunan Draf Audit.</p>
     </div>
-    <!-- Ilustrasi 3D Interaktif: Kubus Data Holografik -->
     <div class="illustration-wrapper">
         <div class="orbit-ring"></div>
         <div class="cube-container">
@@ -481,7 +497,6 @@ tab1, tab2, tab3, tab4 = st.tabs([
 # TAB 1: KERTAS KERJA
 # ------------------------------------------------------------------------------
 with tab1:
-    # KPI Cards
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         with st.container(border=True):
@@ -499,7 +514,6 @@ with tab1:
 
     st.write("")
 
-    # Tabel & Grafik
     col_left, col_right = st.columns([1.2, 1])
     
     with col_left:
@@ -542,7 +556,7 @@ with tab1:
 
     st.write("")
 
-    # AI Assistant Box
+    # --- AI ASSISTANT DENGAN STREAMING ---
     with st.container(border=True):
         st.markdown("#### 🤖 AI Asisten: Penjelasan Hasil")
         col_sel, col_btn = st.columns([3, 1])
@@ -554,12 +568,27 @@ with tab1:
 
         if btn_explain:
             target_payload = payload_json if selected_scope == "Semua Akun (Ringkasan)" else json.dumps(build_llm_payload(wp_df[wp_df["WP_Ref"] == selected_scope.split(" — ")[0].strip()], client_name, period, float(materiality)), indent=2)
-            with st.spinner("Menyusun penjelasan..."):
-                st.session_state["ai_explanation"] = call_llm("Anda adalah asisten auditor. Awali dengan: **[DRAFT - WAJIB REVIEW AUDITOR]**.", f"Data: {target_payload}")
+            system_prompt_explain = "Anda adalah asisten auditor. Awali dengan: **[DRAFT - WAJIB REVIEW AUDITOR]**. HANYA gunakan angka dari JSON. Jika bukti kosong, tulis 'BUKTI BELUM TERSEDIA'."
+            user_prompt_explain = f"Data: {target_payload}"
+            
+            # Streaming output
+            with st.spinner("AI sedang menganalisis data..."):
+                response_placeholder = st.empty()
+                full_text = ""
+                for chunk in call_llm_stream(system_prompt_explain, user_prompt_explain):
+                    full_text += chunk
+                    response_placeholder.markdown(full_text + "▌")
+                response_placeholder.markdown(full_text)
+                st.session_state["ai_explanation"] = full_text
 
         if st.session_state["ai_explanation"]:
-            st.success("✅ Verifikasi Angka Selesai.")
-            st.markdown(st.session_state["ai_explanation"])
+            is_ok_exp, alien_nums_exp = check_numbers(st.session_state["ai_explanation"], wp_df, float(materiality))
+            if is_ok_exp: st.success("✅ **Pemeriksa Angka:** Seluruh angka cocok dengan data sumber.")
+            else: st.error(f"🚨 **Peringatan Angka:** Ditemukan angka tidak valid: `{', '.join(alien_nums_exp)}`.")
+            
+            # Render teks final jika tidak sedang streaming (misal saat ganti tab dan balik lagi)
+            if not btn_explain:
+                st.markdown(st.session_state["ai_explanation"])
 
 # ------------------------------------------------------------------------------
 # TAB 2: RINGKASAN TEMUAN
