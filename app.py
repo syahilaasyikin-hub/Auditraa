@@ -723,9 +723,4 @@ with tab1:
             with st.container(border=True):
                 st.dataframe(
                     missing_ev_df.style.format({"Budget": "Rp {:,.0f}", "Actual": "Rp {:,.0f}", "Variance": "Rp {:,.0f}"}),
-                    use_container_width=True, hide_index=True,
-                )
-
-    st.write("")
-
-    with st.container
+                    use_container_width=True,
