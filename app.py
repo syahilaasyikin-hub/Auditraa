@@ -3,6 +3,7 @@ import os
 import time
 import pandas as pd
 import plotly.express as px
+import plotly.io as pio
 import streamlit as st
 from dotenv import load_dotenv
 from google import genai
@@ -22,14 +23,144 @@ from audit_logic import (
 load_dotenv()
 
 MODEL_NAME = "gemini-3.8-flash"
-# PERBAIKAN: Menghapus gemini-2.5-flash (404 NOT FOUND) dan menggantinya dengan model fallback yang aktif
 FALLBACK_MODELS = ["gemini-3.8-flash", "gemini-3.5-flash-lite"]
 
 st.set_page_config(
     page_title="Auditraa — Dari Angka ke Bukti, Otomatis Terdokumentasi",
     page_icon="📑",
     layout="wide",
+    initial_sidebar_state="expanded"
 )
+
+# ==============================================================================
+# CUSTOM CSS UNTUK TEMA BURGUNDY, FONT MODERN, DAN ANIMASI
+# ==============================================================================
+custom_css = """
+<style>
+    /* Import Google Font */
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+    /* Terapkan Font dan Warna Latar Utama */
+    html, body, [class*="css"] {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    
+    .stApp {
+        background-color: #3b0404; /* Warna Burgundy Gelap dari gambar */
+        color: #f8f9fa;
+    }
+
+    /* Sidebar Styling */
+    [data-testid="stSidebar"] {
+        background-color: #280101; /* Burgundy lebih gelap untuk kontras */
+        border-right: 1px solid #5a1a1a;
+    }
+
+    /* Animasi Fade-in untuk konten utama */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .block-container {
+        animation: fadeIn 0.8s ease-out;
+    }
+
+    /* Styling Kotak Metrik (Kartu) */
+    [data-testid="stMetric"] {
+        background-color: #4a0e0e;
+        border: 1px solid #6b1a1a;
+        border-radius: 12px;
+        padding: 15px 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    }
+    
+    /* Animasi Hover pada Metrik */
+    [data-testid="stMetric"]:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
+        border-color: #ff6b6b;
+    }
+    [data-testid="stMetricValue"] {
+        color: #ffffff;
+        font-weight: 700;
+    }
+    [data-testid="stMetricLabel"] {
+        color: #d1d1d1;
+    }
+
+    /* Styling Tombol */
+    .stButton>button {
+        background-color: #7d1d1d;
+        color: white;
+        border: 1px solid #a83232;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {
+        background-color: #a83232;
+        color: white;
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(168, 50, 50, 0.4);
+    }
+
+    /* Styling Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+        background-color: #280101;
+        padding: 10px;
+        border-radius: 10px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        color: #d1d1d1;
+        background-color: transparent;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #ffffff;
+        background-color: #7d1d1d;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    /* Mempercantik Text Input dan Number Input */
+    .stTextInput>div>div>input, .stNumberInput>div>div>input {
+        background-color: #280101;
+        color: white;
+        border: 1px solid #5a1a1a;
+        border-radius: 6px;
+    }
+    .stTextInput>div>div>input:focus, .stNumberInput>div>div>input:focus {
+        border-color: #ff6b6b;
+        box-shadow: 0 0 0 1px #ff6b6b;
+    }
+
+    /* Styling Alert Box agar menyatu dengan tema */
+    .stAlert {
+        background-color: #4a0e0e;
+        border: 1px solid #6b1a1a;
+        color: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    /* Judul Utama */
+    h1 {
+        color: #ffffff !important;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+    h2, h3 {
+        color: #ffb3b3 !important;
+        font-weight: 600;
+    }
+</style>
+"""
+st.markdown(custom_css, unsafe_allow_html=True)
+
+# Set default plotly template to dark
+pio.templates.default = "plotly_dark"
 
 
 def get_api_key() -> str | None:
@@ -250,11 +381,13 @@ with tab1:
     med_count = int((wp_df["Severity"] == "Medium").sum())
     missing_count = len(missing_ev_df)
 
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Total Akun Diuji", f"{total_accounts} Akun")
-    m2.metric("Ambang Materialitas", f"Rp {materiality:,.0f}")
-    m3.metric("Selisih Signifikan", f"{high_count} High / {med_count} Med")
-    m4.metric("Bukti Belum Tersedia (?)", f"{missing_count} Akun", delta_color="inverse")
+    # Tata letak metrik dibuat lebih rapi dengan container
+    with st.container():
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Total Akun Diuji", f"{total_accounts} Akun")
+        m2.metric("Ambang Materialitas", f"Rp {materiality:,.0f}")
+        m3.metric("Selisih Signifikan", f"{high_count} High / {med_count} Med")
+        m4.metric("Bukti Belum Tersedia (?)", f"{missing_count} Akun", delta_color="inverse")
 
     if not missing_ev_df.empty:
         st.error(
@@ -293,6 +426,8 @@ with tab1:
     )
 
     st.markdown("### Grafik Selisih per Akun")
+    
+    # Menyesuaikan warna grafik dengan tema burgundy
     fig = px.bar(
         wp_df,
         x="Category",
@@ -300,9 +435,9 @@ with tab1:
         color="Severity",
         text="WP_Ref",
         color_discrete_map={
-            "High": "#DC2626",
-            "Medium": "#F59E0B",
-            "Low": "#16A34A",
+            "High": "#ff4d4d",    # Merah terang
+            "Medium": "#ffb366",  # Oranye lembut
+            "Low": "#66b366",     # Hijau lembut
         },
         labels={
             "Category": "Akun",
@@ -311,16 +446,21 @@ with tab1:
         },
         title="Varians Saldo per Akun Terhadap Ambang Materialitas",
     )
+    fig.update_layout(
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#f8f9fa")
+    )
     fig.add_hline(
         y=float(materiality),
         line_dash="dash",
-        line_color="#DC2626",
+        line_color="#ff4d4d",
         annotation_text="Batas Materialitas (+)",
     )
     fig.add_hline(
         y=-float(materiality),
         line_dash="dash",
-        line_color="#DC2626",
+        line_color="#ff4d4d",
         annotation_text="Batas Materialitas (-)",
     )
     fig.update_traces(textposition="outside")
