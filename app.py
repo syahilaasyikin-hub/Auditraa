@@ -728,5 +728,4 @@ with tab1:
 
     st.write("")
 
-    with st.container(border=True):
-        st.markdown('<div class="section-title"><span class="icon">🤖</span>Penjelasan Hasil K
+    with st.container
