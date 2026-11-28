@@ -66,7 +66,6 @@ custom_css = """
         perspective: 1000px;
     }
     
-    /* 1. Data Grid */
     .data-grid {
         position: absolute;
         top: -50%; left: -50%; width: 200%; height: 200%;
@@ -82,7 +81,6 @@ custom_css = """
         100% { transform: rotateX(60deg) translateZ(-200px) translateY(50px); }
     }
 
-    /* 2. Parallax Glow Blobs */
     .parallax-layer {
         position: absolute;
         border-radius: 50%;
@@ -92,7 +90,6 @@ custom_css = """
     .blob-1 { width: 50vw; height: 50vw; background: rgba(160, 40, 50, 0.3); top: -10%; left: -10%; }
     .blob-2 { width: 40vw; height: 40vw; background: rgba(232, 168, 124, 0.15); bottom: -10%; right: -10%; }
 
-    /* 3. Twinkling Stars */
     .stars-container { position: absolute; width: 100%; height: 100%; }
     .star {
         position: absolute;
@@ -116,14 +113,12 @@ custom_css = """
     }
     .block-container { animation: fadeInUp 0.8s ease-out forwards; }
 
-    /* Sidebar Glassmorphism */
     [data-testid="stSidebar"] {
         background: rgba(20, 5, 5, 0.6) !important;
         backdrop-filter: blur(20px);
         border-right: 1px solid rgba(232, 168, 124, 0.15);
     }
 
-    /* --- HEADER DENGAN ILUSTRASI INTERAKTIF --- */
     .header-container {
         display: flex;
         align-items: center;
@@ -154,9 +149,7 @@ custom_css = """
         font-size: 1.1rem;
     }
 
-    /* ======================================================================== */
-    /* ILUSTRASI 3D AUDIT: HOLOGRAPHIC DATA CUBE                                */
-    /* ======================================================================== */
+    /* Ilustrasi 3D Cube */
     .illustration-wrapper {
         width: 200px; height: 200px;
         perspective: 800px;
@@ -164,7 +157,6 @@ custom_css = """
         position: relative;
         display: flex; align-items: center; justify-content: center;
     }
-    
     .cube-container {
         width: 90px; height: 90px;
         position: absolute;
@@ -172,18 +164,15 @@ custom_css = """
         animation: rotateCube 12s linear infinite;
         transition: all 0.5s ease;
     }
-    
     @keyframes rotateCube {
         0% { transform: rotateX(-20deg) rotateY(0deg); }
         100% { transform: rotateX(-20deg) rotateY(360deg); }
     }
-
     .illustration-wrapper:hover .cube-container {
         animation-play-state: paused;
         transform: rotateX(-10deg) rotateY(45deg) scale(1.2);
         filter: drop-shadow(0 0 20px rgba(232, 168, 124, 0.8));
     }
-
     .cube-face {
         position: absolute; width: 90px; height: 90px;
         background: rgba(60, 15, 15, 0.85);
@@ -197,16 +186,13 @@ custom_css = """
     .face-left   { transform: rotateY(-90deg) translateZ(45px); }
     .face-top    { transform: rotateX(90deg) translateZ(45px); display: flex; align-items: center; justify-content: center; }
     .face-bottom { transform: rotateX(-90deg) translateZ(45px); }
-
     .cube-bar { width: 12px; background: linear-gradient(to top, #d4af37, #fdfbf7); border-radius: 2px 2px 0 0; box-shadow: 0 0 8px #e8a87c; }
     .cube-bar.b1 { height: 25px; }
     .cube-bar.b2 { height: 50px; animation: pulseBar 1.5s infinite alternate; }
     .cube-bar.b3 { height: 35px; animation: pulseBar 1.5s infinite alternate 0.5s; }
     @keyframes pulseBar { 0% { height: 20px; } 100% { height: 50px; } }
-
     .cube-line { width: 100%; height: 4px; background: rgba(232, 168, 124, 0.5); border-radius: 2px; }
     .cube-line.short { width: 60%; }
-
     .cube-core {
         width: 30px; height: 30px;
         background: #e8a87c;
@@ -215,7 +201,6 @@ custom_css = """
         animation: pulseCore 1s infinite alternate;
     }
     @keyframes pulseCore { 0% { transform: scale(0.8); } 100% { transform: scale(1.2); } }
-
     .orbit-ring {
         position: absolute;
         width: 160px; height: 160px;
@@ -227,7 +212,7 @@ custom_css = """
     }
     @keyframes spinRing { 100% { transform: rotateX(70deg) rotateY(15deg) rotateZ(360deg); } }
 
-    /* Card Glassmorphism */
+    /* Card & UI */
     div[data-testid="stVerticalBlockBorderWrapper"] {
         background: linear-gradient(145deg, rgba(60, 15, 15, 0.5), rgba(30, 5, 5, 0.7)) !important;
         backdrop-filter: blur(12px) !important;
@@ -242,13 +227,9 @@ custom_css = """
         box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(232, 168, 124, 0.15) !important;
         border: 1px solid rgba(232, 168, 124, 0.4) !important;
     }
-
-    /* Metrik (KPI) */
     [data-testid="stMetric"] { background: transparent; }
     [data-testid="stMetricValue"] { color: #ffffff !important; font-size: 2rem !important; font-weight: 700 !important; }
     [data-testid="stMetricLabel"] { color: #e8a87c !important; font-weight: 600 !important; text-transform: uppercase; font-size: 0.8rem !important; }
-
-    /* Tombol Elegan */
     .stButton>button, .stDownloadButton>button {
         background: linear-gradient(135deg, #e8a87c 0%, #f5d6c6 100%) !important;
         color: #2a0a0a !important;
@@ -261,8 +242,6 @@ custom_css = """
         transform: translateY(-2px) scale(1.02) !important;
         box-shadow: 0 8px 25px rgba(232, 168, 124, 0.5) !important;
     }
-
-    /* Tabs & Inputs */
     .stTabs [data-baseweb="tab-list"] { background-color: transparent; gap: 10px; border-bottom: 1px solid rgba(232, 168, 124, 0.2); padding-bottom: 10px; }
     .stTabs [data-baseweb="tab"] { background: rgba(255, 255, 255, 0.03); border-radius: 8px; color: #b3b3b3; padding: 10px 20px; }
     .stTabs [aria-selected="true"] { background: rgba(232, 168, 124, 0.1); border: 1px solid #e8a87c; color: #e8a87c !important; }
@@ -333,8 +312,7 @@ def get_gemini_client() -> genai.Client | None:
 
 def call_llm(system_prompt: str, user_prompt: str) -> str:
     client = get_gemini_client()
-    if client is None:
-        return "⚠️ **GEMINI_API_KEY belum dikonfigurasi.**"
+    if client is None: return "⚠️ **GEMINI_API_KEY belum dikonfigurasi.**"
     models_to_try = list(dict.fromkeys([MODEL_NAME] + FALLBACK_MODELS))
     last_exc = None
     for model_id in models_to_try:
@@ -345,7 +323,6 @@ def call_llm(system_prompt: str, user_prompt: str) -> str:
                     config=types.GenerateContentConfig(system_instruction=system_prompt, temperature=0),
                 )
                 if response.text and response.text.strip(): return response.text.strip()
-                return "⚠️ Model tidak mengembalikan teks."
             except Exception as exc:
                 last_exc = exc
                 if any(err in str(exc) for err in ["503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED"]) and attempt < 2:
@@ -353,7 +330,6 @@ def call_llm(system_prompt: str, user_prompt: str) -> str:
                 break
     return f"⚠️ Server Gemini sibuk: `{last_exc}`"
 
-# --- FUNGSI BARU: STREAMING UNTUK EFEK MENGETIK ---
 def call_llm_stream(system_prompt: str, user_prompt: str):
     client = get_gemini_client()
     if client is None:
@@ -373,14 +349,14 @@ def call_llm_stream(system_prompt: str, user_prompt: str):
                 for chunk in response:
                     if chunk.text:
                         yield chunk.text
-                return # Berhasil
+                return 
             except Exception as exc:
                 last_exc = exc
                 if any(err in str(exc) for err in ["503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED"]) and attempt < 2:
                     time.sleep(1.5 * (attempt + 1))
                     continue
                 break
-    yield f"⚠️ Server Gemini sibuk: `{last_exc}`"
+    yield f"⚠️ Server Gemini sibuk atau API Key bermasalah: `{last_exc}`"
 
 def init_session_state() -> None:
     defaults = {"ai_explanation": "", "findings_draft": "", "mgmt_letter_draft": "", "chat_history": [], "use_demo_data": False}
@@ -556,7 +532,7 @@ with tab1:
 
     st.write("")
 
-    # --- AI ASSISTANT DENGAN STREAMING ---
+    # --- AI ASSISTANT DENGAN STREAMING (TANPA SPINNER) ---
     with st.container(border=True):
         st.markdown("#### 🤖 AI Asisten: Penjelasan Hasil")
         col_sel, col_btn = st.columns([3, 1])
@@ -571,22 +547,27 @@ with tab1:
             system_prompt_explain = "Anda adalah asisten auditor. Awali dengan: **[DRAFT - WAJIB REVIEW AUDITOR]**. HANYA gunakan angka dari JSON. Jika bukti kosong, tulis 'BUKTI BELUM TERSEDIA'."
             user_prompt_explain = f"Data: {target_payload}"
             
-            # Streaming output
-            with st.spinner("AI sedang menganalisis data..."):
-                response_placeholder = st.empty()
-                full_text = ""
-                for chunk in call_llm_stream(system_prompt_explain, user_prompt_explain):
-                    full_text += chunk
-                    response_placeholder.markdown(full_text + "▌")
-                response_placeholder.markdown(full_text)
-                st.session_state["ai_explanation"] = full_text
+            # Status dan placeholder output
+            status_text = st.empty()
+            status_text.info("⏳ Menghubungkan ke server AI... (Membaca data)")
+            
+            response_placeholder = st.empty()
+            full_text = ""
+            
+            for chunk in call_llm_stream(system_prompt_explain, user_prompt_explain):
+                if full_text == "":
+                    status_text.empty() # Hapus status info saat teks pertama muncul
+                full_text += chunk
+                response_placeholder.markdown(full_text + "▌")
+                
+            response_placeholder.markdown(full_text)
+            st.session_state["ai_explanation"] = full_text
 
         if st.session_state["ai_explanation"]:
             is_ok_exp, alien_nums_exp = check_numbers(st.session_state["ai_explanation"], wp_df, float(materiality))
             if is_ok_exp: st.success("✅ **Pemeriksa Angka:** Seluruh angka cocok dengan data sumber.")
             else: st.error(f"🚨 **Peringatan Angka:** Ditemukan angka tidak valid: `{', '.join(alien_nums_exp)}`.")
             
-            # Render teks final jika tidak sedang streaming (misal saat ganti tab dan balik lagi)
             if not btn_explain:
                 st.markdown(st.session_state["ai_explanation"])
 
