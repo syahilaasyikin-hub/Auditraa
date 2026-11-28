@@ -33,7 +33,7 @@ st.set_page_config(
 )
 
 # ==============================================================================
-# CSS PREMIUM: IMMERSIVE ANIMATED BACKGROUND, GLASSMORPHISM, & GOLD ACCENTS
+# CSS PREMIUM: MIDNIGHT BURGUNDY + CHAMPAGNE GOLD (GLASSMORPHISM & ANIMATIONS)
 # ==============================================================================
 custom_css = """
 <style>
@@ -43,140 +43,47 @@ custom_css = """
     /* Base Styling */
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
-        background-color: #140303; /* Deep fallback */
     }
     h1, h2, h3, .brand-title {
         font-family: 'Outfit', sans-serif;
     }
     
-    /* Sembunyikan header bawaan Streamlit & buat app transparan agar background terlihat */
+    /* Background Utama: Deep Midnight Burgundy */
+    .stApp {
+        background: radial-gradient(circle at top right, #2b0e0e 0%, #0d0303 100%);
+        color: #fcfbf9;
+    }
+
+    /* Sidebar: Dark Glass */
+    [data-testid="stSidebar"] {
+        background: rgba(15, 3, 3, 0.7) !important;
+        backdrop-filter: blur(20px);
+        border-right: 1px solid rgba(212, 175, 55, 0.15);
+    }
+    
+    /* Menyembunyikan Header Bawaan Streamlit */
     header {visibility: hidden;}
-    .stApp { background: transparent !important; }
 
-    /* ======================================================================== */
-    /* ANIMASI LATAR BELAKANG (FINANCIAL DATA SPACE)                            */
-    /* ======================================================================== */
-    .bg-container {
-        position: fixed;
-        top: 0; left: 0; width: 100vw; height: 100vh;
-        z-index: -1;
-        overflow: hidden;
-        background: linear-gradient(135deg, #1a0505 0%, #3a0d10 100%);
-        pointer-events: none;
-    }
-    
-    /* 1. Mesh Gradient Blobs (Cahaya Burgundy & Emas) */
-    .blob {
-        position: absolute;
-        border-radius: 50%;
-        filter: blur(120px);
-        opacity: 0.5;
-        animation: floatBlob 25s infinite alternate ease-in-out;
-    }
-    .blob-1 { width: 600px; height: 600px; background: rgba(160, 40, 50, 0.4); top: -100px; left: -100px; }
-    .blob-2 { width: 500px; height: 500px; background: rgba(232, 168, 124, 0.15); bottom: -100px; right: -100px; animation-delay: -5s; }
-    .blob-3 { width: 400px; height: 400px; background: rgba(200, 80, 80, 0.2); top: 40%; left: 40%; animation-delay: -10s; }
-    
-    @keyframes floatBlob {
-        0% { transform: translate(0, 0) scale(1); }
-        50% { transform: translate(80px, 60px) scale(1.1); }
-        100% { transform: translate(-60px, 120px) scale(0.9); }
-    }
-
-    /* 2. Garis Grafik Aliran Data (SVG Animation) */
-    .data-lines {
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        opacity: 0.3;
-    }
-    .data-line-path {
-        fill: none;
-        stroke: #e8a87c;
-        stroke-width: 2;
-        stroke-dasharray: 1000;
-        stroke-dashoffset: 1000;
-        animation: drawLine 15s linear infinite;
-    }
-    .data-line-path-2 {
-        fill: none;
-        stroke: rgba(232, 168, 124, 0.4);
-        stroke-width: 1;
-        stroke-dasharray: 500;
-        stroke-dashoffset: 500;
-        animation: drawLine 20s linear infinite reverse;
-    }
-    @keyframes drawLine {
-        0% { stroke-dashoffset: 1000; }
-        50% { stroke-dashoffset: 0; }
-        100% { stroke-dashoffset: -1000; }
-    }
-
-    /* 3. Partikel Emas Terbang (Glowing Particles) */
-    .particles-container {
-        position: absolute;
-        width: 100%; height: 100%;
-    }
-    .particle {
-        position: absolute;
-        background: #e8a87c;
-        border-radius: 50%;
-        box-shadow: 0 0 10px #e8a87c, 0 0 20px rgba(232, 168, 124, 0.5);
-        animation: floatUp linear infinite;
-        opacity: 0;
-    }
-    @keyframes floatUp {
-        0% { transform: translateY(100vh) scale(0); opacity: 0; }
-        20% { opacity: 0.8; }
-        80% { opacity: 0.8; }
-        100% { transform: translateY(-10vh) scale(1); opacity: 0; }
-    }
-
-    /* 4. Lingkaran Abstrak Berdenyut (Glowing Rings) */
-    .glow-ring {
-        position: absolute;
-        border: 1px solid rgba(232, 168, 124, 0.15);
-        border-radius: 50%;
-        animation: pulseRing 10s infinite alternate;
-    }
-    .ring-1 { width: 40vw; height: 40vw; top: -10vw; left: -10vw; }
-    .ring-2 { width: 30vw; height: 30vw; bottom: -5vw; right: -5vw; animation-delay: -5s; }
-    
-    @keyframes pulseRing {
-        0% { transform: scale(1); opacity: 0.3; }
-        100% { transform: scale(1.2); opacity: 0.1; }
-    }
-
-    /* ======================================================================== */
-    /* UI ELEMENTS                                                              */
-    /* ======================================================================== */
-
-    /* Animasi Masuk Konten */
+    /* --- ANIMASI GLOBAL --- */
     @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
     }
     .block-container {
-        animation: fadeInUp 0.8s ease-out forwards;
+        animation: fadeInUp 0.7s ease-out forwards;
     }
 
-    /* Sidebar Glassmorphism */
-    [data-testid="stSidebar"] {
-        background: rgba(15, 3, 3, 0.7) !important;
-        backdrop-filter: blur(20px);
-        border-right: 1px solid rgba(232, 168, 124, 0.15);
-    }
-
-    /* Header Kustom */
+    /* --- HEADER KUSTOM (Bento Style) --- */
     .header-container {
         display: flex;
         align-items: center;
         justify-content: space-between;
         padding: 30px 40px;
-        background: linear-gradient(135deg, rgba(74, 21, 24, 0.5) 0%, rgba(30, 8, 8, 0.8) 100%);
-        backdrop-filter: blur(16px);
+        background: linear-gradient(135deg, rgba(45, 10, 10, 0.6) 0%, rgba(20, 5, 5, 0.8) 100%);
+        backdrop-filter: blur(15px);
         border-radius: 20px;
-        border: 1px solid rgba(232, 168, 124, 0.2);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(212, 175, 55, 0.2);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         margin-bottom: 25px;
         position: relative;
         overflow: hidden;
@@ -185,147 +92,171 @@ custom_css = """
         content: '';
         position: absolute;
         top: 0; left: 0; width: 4px; height: 100%;
-        background: linear-gradient(to bottom, #e8a87c, #fdfbf7);
+        background: linear-gradient(to bottom, #d4af37, #f3e5ab);
     }
     
     .header-content h1 {
         margin: 0;
         font-size: 2.4rem;
         font-weight: 700;
-        background: linear-gradient(to right, #ffffff, #fdfbf7, #e8a87c);
+        background: linear-gradient(to right, #ffffff, #e8d099, #d4af37);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        letter-spacing: -0.5px;
     }
     .header-content p {
         margin: 8px 0 0 0;
-        color: #d1d1d1;
+        color: #a3a3a3;
         font-size: 1.05rem;
+        font-weight: 400;
     }
 
-    /* Animasi Radar Visual di Header */
+    /* --- ANIMASI VISUAL DI HEADER (RADAR DATA / AI CORE) --- */
     .visual-core-container {
         position: relative;
-        width: 80px; height: 80px;
-        display: flex; align-items: center; justify-content: center;
+        width: 80px;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     .core-orb {
-        width: 20px; height: 20px;
-        background: #e8a87c;
+        width: 20px;
+        height: 20px;
+        background: #d4af37;
         border-radius: 50%;
-        box-shadow: 0 0 20px #e8a87c;
+        box-shadow: 0 0 20px #d4af37, 0 0 40px rgba(212, 175, 55, 0.5);
         animation: pulseOrb 2s infinite alternate;
         z-index: 2;
     }
     .core-ring-1 {
-        position: absolute; width: 60px; height: 60px;
-        border: 2px solid rgba(232, 168, 124, 0.2);
-        border-top: 2px solid #e8a87c;
+        position: absolute;
+        width: 60px;
+        height: 60px;
+        border: 2px solid rgba(212, 175, 55, 0.2);
+        border-top: 2px solid #d4af37;
         border-radius: 50%;
         animation: spinRing 3s linear infinite;
     }
     .core-ring-2 {
-        position: absolute; width: 80px; height: 80px;
-        border: 1px dashed rgba(232, 168, 124, 0.3);
+        position: absolute;
+        width: 80px;
+        height: 80px;
+        border: 1px dashed rgba(212, 175, 55, 0.3);
         border-radius: 50%;
         animation: spinRingReverse 5s linear infinite;
     }
+    
     @keyframes spinRing { 100% { transform: rotate(360deg); } }
     @keyframes spinRingReverse { 100% { transform: rotate(-360deg); } }
-    @keyframes pulseOrb { 0% { transform: scale(1); } 100% { transform: scale(1.3); box-shadow: 0 0 30px #e8a87c; } }
+    @keyframes pulseOrb {
+        0% { transform: scale(1); box-shadow: 0 0 10px #d4af37; }
+        100% { transform: scale(1.3); box-shadow: 0 0 30px #d4af37, 0 0 50px rgba(212, 175, 55, 0.8); }
+    }
 
-    /* Kartu Glassmorphism */
+    /* --- KARTU GLASSMORPHISM (Bento Grid) --- */
     div[data-testid="stVerticalBlockBorderWrapper"] {
-        background: linear-gradient(145deg, rgba(60, 15, 15, 0.5), rgba(30, 5, 5, 0.7)) !important;
-        backdrop-filter: blur(12px) !important;
-        border: 1px solid rgba(232, 168, 124, 0.15) !important;
+        background: linear-gradient(145deg, rgba(40, 10, 10, 0.5), rgba(15, 3, 3, 0.7)) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(212, 175, 55, 0.15) !important;
         border-radius: 16px !important;
         padding: 20px !important;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
-        transition: all 0.4s ease !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+        transition: all 0.3s ease !important;
+        animation: fadeInUp 0.6s ease-out;
     }
+    
+    /* Hover Efek pada Kartu */
     div[data-testid="stVerticalBlockBorderWrapper"]:hover {
         transform: translateY(-4px);
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(232, 168, 124, 0.15) !important;
-        border: 1px solid rgba(232, 168, 124, 0.4) !important;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(212, 175, 55, 0.1) !important;
+        border: 1px solid rgba(212, 175, 55, 0.3) !important;
     }
 
-    /* Metrik (KPI) */
-    [data-testid="stMetric"] { background: transparent; }
-    [data-testid="stMetricValue"] { color: #ffffff !important; font-size: 2rem !important; font-weight: 700 !important; font-family: 'Outfit', sans-serif; }
-    [data-testid="stMetricLabel"] { color: #e8a87c !important; font-weight: 600 !important; text-transform: uppercase; font-size: 0.8rem !important; }
+    /* --- STYLING METRIK (KPI) --- */
+    [data-testid="stMetric"] {
+        background: transparent;
+    }
+    [data-testid="stMetricValue"] {
+        color: #ffffff !important;
+        font-size: 2rem !important;
+        font-weight: 700 !important;
+        font-family: 'Outfit', sans-serif;
+    }
+    [data-testid="stMetricLabel"] {
+        color: #d4af37 !important; /* Champagne Gold */
+        font-weight: 600 !important;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        font-size: 0.8rem !important;
+    }
 
-    /* Tombol Elegan */
+    /* --- TOMBOL PREMIUM (GOLD GRADIENT) --- */
     .stButton>button, .stDownloadButton>button {
-        background: linear-gradient(135deg, #e8a87c 0%, #f5d6c6 100%) !important;
-        color: #2a0a0a !important;
-        border: none !important; border-radius: 10px !important;
-        font-weight: 700 !important; font-family: 'Outfit', sans-serif;
+        background: linear-gradient(135deg, #d4af37 0%, #f3e5ab 100%) !important;
+        color: #1a0505 !important;
+        border: none !important;
+        border-radius: 10px !important;
+        font-weight: 700 !important;
+        font-family: 'Outfit', sans-serif;
+        padding: 10px 24px !important;
         transition: all 0.3s ease !important;
-        box-shadow: 0 4px 15px rgba(232, 168, 124, 0.2) !important;
+        box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2) !important;
     }
     .stButton>button:hover, .stDownloadButton>button:hover {
         transform: translateY(-2px) scale(1.02) !important;
-        box-shadow: 0 8px 25px rgba(232, 168, 124, 0.5) !important;
+        box-shadow: 0 8px 25px rgba(212, 175, 55, 0.5) !important;
+        color: #000000 !important;
     }
 
-    /* Tabs Modern */
-    .stTabs [data-baseweb="tab-list"] { background-color: transparent; gap: 10px; border-bottom: 1px solid rgba(232, 168, 124, 0.2); padding-bottom: 10px; }
-    .stTabs [data-baseweb="tab"] { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px; color: #b3b3b3; padding: 10px 20px; transition: all 0.3s; }
-    .stTabs [aria-selected="true"] { background: rgba(232, 168, 124, 0.1); border: 1px solid #e8a87c; color: #e8a87c !important; box-shadow: 0 2px 10px rgba(232, 168, 124, 0.1); }
+    /* --- TABS MODERN --- */
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: transparent;
+        gap: 10px;
+        border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        padding-bottom: 10px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        color: #a3a3a3;
+        padding: 10px 20px;
+        transition: all 0.3s;
+        font-weight: 500;
+    }
+    .stTabs [aria-selected="true"] {
+        background: rgba(212, 175, 55, 0.1);
+        border: 1px solid #d4af37;
+        color: #d4af37 !important;
+        font-weight: 600;
+        box-shadow: 0 2px 10px rgba(212, 175, 55, 0.1);
+    }
 
-    /* Input Fields & Alert */
+    /* --- INPUT FIELDS --- */
     .stTextInput>div>div>input, .stNumberInput>div>div>input, [data-testid="stFileUploadDropzone"] {
         background-color: rgba(0, 0, 0, 0.3) !important;
-        border: 1px solid rgba(232, 168, 124, 0.2) !important;
+        border: 1px solid rgba(212, 175, 55, 0.2) !important;
+        border-radius: 8px !important;
         color: #ffffff !important;
+        transition: all 0.3s ease;
     }
-    [data-testid="stAlert"] { background-color: rgba(60, 15, 15, 0.8) !important; border: 1px solid #e8a87c !important; border-radius: 10px; }
+    .stTextInput>div>div>input:focus, .stNumberInput>div>div>input:focus {
+        border-color: #d4af37 !important;
+        box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2) !important;
+    }
+    
+    /* Alert Box */
+    [data-testid="stAlert"] {
+        background-color: rgba(40, 10, 10, 0.8) !important;
+        border: 1px solid #d4af37 !important;
+        color: #fcfbf9 !important;
+        border-radius: 10px;
+    }
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
-
-# ==============================================================================
-# INJEKSI HTML UNTUK BACKGROUND ANIMASI (PARTIKEL, GARIS, LINGKARAN)
-# ==============================================================================
-background_html = """
-<div class="bg-container">
-    <!-- Blobs -->
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-    <div class="blob blob-3"></div>
-
-    <!-- Garis Grafik Data -->
-    <svg class="data-lines" preserveAspectRatio="none" viewBox="0 0 1000 1000">
-        <path class="data-line-path" d="M 0,800 Q 150,750 300,850 T 600,600 T 900,700 T 1000,500" />
-        <path class="data-line-path-2" d="M 0,600 Q 200,650 400,500 T 800,700 T 1000,400" />
-        <path class="data-line-path-2" d="M 0,300 Q 250,400 500,200 T 1000,300" />
-    </svg>
-
-    <!-- Lingkaran Abstrak -->
-    <div class="glow-ring ring-1"></div>
-    <div class="glow-ring ring-2"></div>
-
-    <!-- Partikel Emas Terbang (15 Partikel dengan delay & posisi random) -->
-    <div class="particles-container">
-        <div class="particle" style="left: 10%; width: 4px; height: 4px; animation-duration: 15s; animation-delay: 0s;"></div>
-        <div class="particle" style="left: 20%; width: 2px; height: 2px; animation-duration: 20s; animation-delay: 2s;"></div>
-        <div class="particle" style="left: 35%; width: 6px; height: 6px; animation-duration: 25s; animation-delay: 5s;"></div>
-        <div class="particle" style="left: 45%; width: 3px; height: 3px; animation-duration: 18s; animation-delay: 1s;"></div>
-        <div class="particle" style="left: 60%; width: 5px; height: 5px; animation-duration: 22s; animation-delay: 8s;"></div>
-        <div class="particle" style="left: 75%; width: 2px; height: 2px; animation-duration: 16s; animation-delay: 4s;"></div>
-        <div class="particle" style="left: 85%; width: 4px; height: 4px; animation-duration: 28s; animation-delay: 7s;"></div>
-        <div class="particle" style="left: 95%; width: 3px; height: 3px; animation-duration: 19s; animation-delay: 3s;"></div>
-        <div class="particle" style="left: 5%; width: 5px; height: 5px; animation-duration: 24s; animation-delay: 10s;"></div>
-        <div class="particle" style="left: 50%; width: 2px; height: 2px; animation-duration: 14s; animation-delay: 6s;"></div>
-        <div class="particle" style="left: 30%; width: 4px; height: 4px; animation-duration: 21s; animation-delay: 12s;"></div>
-        <div class="particle" style="left: 70%; width: 6px; height: 6px; animation-duration: 26s; animation-delay: 9s;"></div>
-    </div>
-</div>
-"""
-st.markdown(background_html, unsafe_allow_html=True)
-
 pio.templates.default = "plotly_dark"
-
 
 # ==============================================================================
 # FUNGSI LOGIKA BACKEND (TIDAK ADA PERUBAHAN)
@@ -376,23 +307,23 @@ def reset_generated_outputs() -> None:
 init_session_state()
 
 # ==============================================================================
-# SIDEBAR: CONTROL PANEL
+# SIDEBAR: PREMIUM CONTROL PANEL
 # ==============================================================================
 with st.sidebar:
     st.markdown("""
         <div style="margin-bottom: 25px; text-align: center;">
-            <h2 class="brand-title" style="color: #ffffff; margin:0; font-size: 2rem;">Auditraa<span style="color:#e8a87c;">.</span></h2>
-            <p style="color: #e8a87c; font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;">Smart Audit Engine</p>
+            <h2 class="brand-title" style="color: #ffffff; margin:0; font-size: 2rem;">Auditraa<span style="color:#d4af37;">.</span></h2>
+            <p style="color: #d4af37; font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;">Smart Audit Engine</p>
         </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("<div style='border-bottom: 1px solid rgba(232,168,124,0.2); margin-bottom: 20px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='border-bottom: 1px solid rgba(212,175,55,0.2); margin-bottom: 20px;'></div>", unsafe_allow_html=True)
     st.markdown("### ⚙️ Parameter Audit")
     client_name = st.text_input("Nama Entitas / Klien", value="PT Nusantara Sejahtera Tbk")
     period = st.text_input("Periode Audit", value="Tahun Buku 2025")
     materiality = st.number_input("Ambang Materialitas (Rp)", min_value=1_000_000, max_value=100_000_000_000, value=50_000_000, step=5_000_000, format="%d")
 
-    st.markdown("<div style='border-bottom: 1px solid rgba(232,168,124,0.2); margin: 20px 0;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='border-bottom: 1px solid rgba(212,175,55,0.2); margin: 20px 0;'></div>", unsafe_allow_html=True)
     st.markdown("### 📂 Manajemen Data")
     uploaded_file = st.file_uploader("Unggah file (.xlsx)", type=["xlsx"])
     
@@ -407,11 +338,11 @@ with st.sidebar:
         use_container_width=True,
     )
 
-    st.markdown("<div style='border-bottom: 1px solid rgba(232,168,124,0.2); margin: 20px 0;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='border-bottom: 1px solid rgba(212,175,55,0.2); margin: 20px 0;'></div>", unsafe_allow_html=True)
     st.caption("🛡️ **Keamanan:** Jangan unggah data klien riil tanpa izin. Gunakan data fiktif untuk pengujian.")
 
 # ==============================================================================
-# HEADER MAIN AREA
+# HEADER MAIN AREA (DENGAN ANIMASI RADAR CORE)
 # ==============================================================================
 st.markdown("""
 <div class="header-container">
@@ -428,7 +359,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# PEMUATAN DATA
+# PEMUATAN DATA & WELCOME SCREEN
 # ==============================================================================
 raw_df = None
 if uploaded_file is not None:
@@ -460,10 +391,10 @@ tab1, tab2, tab3, tab4 = st.tabs([
 ])
 
 # ------------------------------------------------------------------------------
-# TAB 1: KERTAS KERJA
+# TAB 1: KERTAS KERJA (DASHBOARD UTAMA)
 # ------------------------------------------------------------------------------
 with tab1:
-    # KPI Cards
+    # KPI Cards (Glassmorphism)
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         with st.container(border=True):
@@ -500,17 +431,18 @@ with tab1:
     with col_right:
         with st.container(border=True):
             st.markdown("#### 📈 Analisis Varians")
+            # Warna grafik disesuaikan dengan tema Burgundy & Gold
             fig = px.bar(
                 wp_df, x="Category", y="Variance", color="Severity", text="WP_Ref",
-                color_discrete_map={"High": "#ff4d4d", "Medium": "#e8a87c", "Low": "#2a9d8f"},
+                color_discrete_map={"High": "#ff4d4d", "Medium": "#d4af37", "Low": "#2a9d8f"},
                 labels={"Category": "", "Variance": "Selisih [Rp]", "Severity": ""},
             )
             fig.update_layout(
                 plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
                 font=dict(color="#e0e0e0"), margin=dict(l=10, r=10, t=10, b=10)
             )
-            fig.add_hline(y=float(materiality), line_dash="dot", line_color="#e8a87c", annotation_text="Batas (+)")
-            fig.add_hline(y=-float(materiality), line_dash="dot", line_color="#e8a87c", annotation_text="Batas (-)")
+            fig.add_hline(y=float(materiality), line_dash="dot", line_color="#d4af37", annotation_text="Batas (+)")
+            fig.add_hline(y=-float(materiality), line_dash="dot", line_color="#d4af37", annotation_text="Batas (-)")
             fig.update_traces(textposition="outside")
             st.plotly_chart(fig, use_container_width=True)
 
