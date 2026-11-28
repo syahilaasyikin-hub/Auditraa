@@ -33,7 +33,7 @@ st.set_page_config(
 )
 
 # ==============================================================================
-# CSS PREMIUM: MIDNIGHT BURGUNDY + CHAMPAGNE GOLD (GLASSMORPHISM & ANIMATIONS)
+# CSS PREMIUM: SOFT BURGUNDY, ANIMATED BACKGROUND, & GLASSMORPHISM
 # ==============================================================================
 custom_css = """
 <style>
@@ -43,34 +43,75 @@ custom_css = """
     /* Base Styling */
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
+        background-color: #2a0a0a; /* Fallback */
     }
     h1, h2, h3, .brand-title {
         font-family: 'Outfit', sans-serif;
     }
     
-    /* Background Utama: Deep Midnight Burgundy */
-    .stApp {
-        background: radial-gradient(circle at top right, #2b0e0e 0%, #0d0303 100%);
-        color: #fcfbf9;
-    }
+    /* Menyembunyikan elemen bawaan Streamlit yang tidak diperlukan */
+    header {visibility: hidden;}
+    .stApp { background: transparent !important; }
 
-    /* Sidebar: Dark Glass */
-    [data-testid="stSidebar"] {
-        background: rgba(15, 3, 3, 0.7) !important;
-        backdrop-filter: blur(20px);
-        border-right: 1px solid rgba(212, 175, 55, 0.15);
+    /* --- ANIMASI LATAR BELAKANG (MESH GRADIENT / BLOBS) --- */
+    .bg-container {
+        position: fixed;
+        top: 0; left: 0; width: 100vw; height: 100vh;
+        z-index: -1;
+        overflow: hidden;
+        background: linear-gradient(135deg, #2a0a0a 0%, #4a1518 100%);
     }
     
-    /* Menyembunyikan Header Bawaan Streamlit */
-    header {visibility: hidden;}
+    .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(100px);
+        opacity: 0.6;
+        animation: floatBlob 20s infinite alternate ease-in-out;
+    }
+    
+    .blob-1 {
+        width: 600px; height: 600px;
+        background: rgba(180, 60, 70, 0.4); /* Soft Burgundy Glow */
+        top: -100px; left: -100px;
+    }
+    
+    .blob-2 {
+        width: 500px; height: 500px;
+        background: rgba(232, 168, 124, 0.2); /* Rose Gold Glow */
+        bottom: -100px; right: -100px;
+        animation-delay: -5s;
+        animation-duration: 25s;
+    }
+    
+    .blob-3 {
+        width: 400px; height: 400px;
+        background: rgba(220, 100, 100, 0.25);
+        top: 40%; left: 40%;
+        animation-delay: -10s;
+        animation-duration: 30s;
+    }
 
-    /* --- ANIMASI GLOBAL --- */
+    @keyframes floatBlob {
+        0% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(100px, 50px) scale(1.1); }
+        100% { transform: translate(-50px, 150px) scale(0.9); }
+    }
+
+    /* --- ANIMASI MASUK KONTEN --- */
     @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
     }
     .block-container {
-        animation: fadeInUp 0.7s ease-out forwards;
+        animation: fadeInUp 0.8s ease-out forwards;
+    }
+
+    /* --- SIDEBAR --- */
+    [data-testid="stSidebar"] {
+        background: rgba(20, 5, 5, 0.6) !important;
+        backdrop-filter: blur(20px);
+        border-right: 1px solid rgba(232, 168, 124, 0.15);
     }
 
     /* --- HEADER KUSTOM (Bento Style) --- */
@@ -79,11 +120,11 @@ custom_css = """
         align-items: center;
         justify-content: space-between;
         padding: 30px 40px;
-        background: linear-gradient(135deg, rgba(45, 10, 10, 0.6) 0%, rgba(20, 5, 5, 0.8) 100%);
-        backdrop-filter: blur(15px);
+        background: linear-gradient(135deg, rgba(74, 21, 24, 0.4) 0%, rgba(30, 8, 8, 0.7) 100%);
+        backdrop-filter: blur(16px);
         border-radius: 20px;
-        border: 1px solid rgba(212, 175, 55, 0.2);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(232, 168, 124, 0.2);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
         margin-bottom: 25px;
         position: relative;
         overflow: hidden;
@@ -92,26 +133,26 @@ custom_css = """
         content: '';
         position: absolute;
         top: 0; left: 0; width: 4px; height: 100%;
-        background: linear-gradient(to bottom, #d4af37, #f3e5ab);
+        background: linear-gradient(to bottom, #e8a87c, #fdfbf7);
     }
     
     .header-content h1 {
         margin: 0;
         font-size: 2.4rem;
         font-weight: 700;
-        background: linear-gradient(to right, #ffffff, #e8d099, #d4af37);
+        background: linear-gradient(to right, #ffffff, #fdfbf7, #e8a87c);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         letter-spacing: -0.5px;
     }
     .header-content p {
         margin: 8px 0 0 0;
-        color: #a3a3a3;
+        color: #d1d1d1;
         font-size: 1.05rem;
         font-weight: 400;
     }
 
-    /* --- ANIMASI VISUAL DI HEADER (RADAR DATA / AI CORE) --- */
+    /* --- ANIMASI VISUAL DI HEADER (RADAR DATA) --- */
     .visual-core-container {
         position: relative;
         width: 80px;
@@ -123,9 +164,9 @@ custom_css = """
     .core-orb {
         width: 20px;
         height: 20px;
-        background: #d4af37;
+        background: #e8a87c;
         border-radius: 50%;
-        box-shadow: 0 0 20px #d4af37, 0 0 40px rgba(212, 175, 55, 0.5);
+        box-shadow: 0 0 20px #e8a87c, 0 0 40px rgba(232, 168, 124, 0.5);
         animation: pulseOrb 2s infinite alternate;
         z-index: 2;
     }
@@ -133,8 +174,8 @@ custom_css = """
         position: absolute;
         width: 60px;
         height: 60px;
-        border: 2px solid rgba(212, 175, 55, 0.2);
-        border-top: 2px solid #d4af37;
+        border: 2px solid rgba(232, 168, 124, 0.2);
+        border-top: 2px solid #e8a87c;
         border-radius: 50%;
         animation: spinRing 3s linear infinite;
     }
@@ -142,7 +183,7 @@ custom_css = """
         position: absolute;
         width: 80px;
         height: 80px;
-        border: 1px dashed rgba(212, 175, 55, 0.3);
+        border: 1px dashed rgba(232, 168, 124, 0.3);
         border-radius: 50%;
         animation: spinRingReverse 5s linear infinite;
     }
@@ -150,33 +191,29 @@ custom_css = """
     @keyframes spinRing { 100% { transform: rotate(360deg); } }
     @keyframes spinRingReverse { 100% { transform: rotate(-360deg); } }
     @keyframes pulseOrb {
-        0% { transform: scale(1); box-shadow: 0 0 10px #d4af37; }
-        100% { transform: scale(1.3); box-shadow: 0 0 30px #d4af37, 0 0 50px rgba(212, 175, 55, 0.8); }
+        0% { transform: scale(1); box-shadow: 0 0 10px #e8a87c; }
+        100% { transform: scale(1.3); box-shadow: 0 0 30px #e8a87c, 0 0 50px rgba(232, 168, 124, 0.8); }
     }
 
-    /* --- KARTU GLASSMORPHISM (Bento Grid) --- */
+    /* --- KARTU GLASSMORPHISM --- */
     div[data-testid="stVerticalBlockBorderWrapper"] {
-        background: linear-gradient(145deg, rgba(40, 10, 10, 0.5), rgba(15, 3, 3, 0.7)) !important;
-        backdrop-filter: blur(10px) !important;
-        border: 1px solid rgba(212, 175, 55, 0.15) !important;
+        background: linear-gradient(145deg, rgba(60, 15, 15, 0.4), rgba(30, 5, 5, 0.6)) !important;
+        backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(232, 168, 124, 0.15) !important;
         border-radius: 16px !important;
         padding: 20px !important;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
-        transition: all 0.3s ease !important;
-        animation: fadeInUp 0.6s ease-out;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+        transition: all 0.4s ease !important;
     }
     
-    /* Hover Efek pada Kartu */
     div[data-testid="stVerticalBlockBorderWrapper"]:hover {
         transform: translateY(-4px);
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(212, 175, 55, 0.1) !important;
-        border: 1px solid rgba(212, 175, 55, 0.3) !important;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(232, 168, 124, 0.15) !important;
+        border: 1px solid rgba(232, 168, 124, 0.4) !important;
     }
 
-    /* --- STYLING METRIK (KPI) --- */
-    [data-testid="stMetric"] {
-        background: transparent;
-    }
+    /* --- METRIK (KPI) --- */
+    [data-testid="stMetric"] { background: transparent; }
     [data-testid="stMetricValue"] {
         color: #ffffff !important;
         font-size: 2rem !important;
@@ -184,28 +221,28 @@ custom_css = """
         font-family: 'Outfit', sans-serif;
     }
     [data-testid="stMetricLabel"] {
-        color: #d4af37 !important; /* Champagne Gold */
+        color: #e8a87c !important; 
         font-weight: 600 !important;
         letter-spacing: 0.5px;
         text-transform: uppercase;
         font-size: 0.8rem !important;
     }
 
-    /* --- TOMBOL PREMIUM (GOLD GRADIENT) --- */
+    /* --- TOMBOL ELEGAN --- */
     .stButton>button, .stDownloadButton>button {
-        background: linear-gradient(135deg, #d4af37 0%, #f3e5ab 100%) !important;
-        color: #1a0505 !important;
+        background: linear-gradient(135deg, #e8a87c 0%, #f5d6c6 100%) !important;
+        color: #2a0a0a !important;
         border: none !important;
         border-radius: 10px !important;
         font-weight: 700 !important;
         font-family: 'Outfit', sans-serif;
         padding: 10px 24px !important;
         transition: all 0.3s ease !important;
-        box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2) !important;
+        box-shadow: 0 4px 15px rgba(232, 168, 124, 0.2) !important;
     }
     .stButton>button:hover, .stDownloadButton>button:hover {
         transform: translateY(-2px) scale(1.02) !important;
-        box-shadow: 0 8px 25px rgba(212, 175, 55, 0.5) !important;
+        box-shadow: 0 8px 25px rgba(232, 168, 124, 0.5) !important;
         color: #000000 !important;
     }
 
@@ -213,53 +250,63 @@ custom_css = """
     .stTabs [data-baseweb="tab-list"] {
         background-color: transparent;
         gap: 10px;
-        border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        border-bottom: 1px solid rgba(232, 168, 124, 0.2);
         padding-bottom: 10px;
     }
     .stTabs [data-baseweb="tab"] {
-        background: rgba(255, 255, 255, 0.02);
+        background: rgba(255, 255, 255, 0.03);
         border: 1px solid rgba(255, 255, 255, 0.05);
         border-radius: 8px;
-        color: #a3a3a3;
+        color: #b3b3b3;
         padding: 10px 20px;
         transition: all 0.3s;
         font-weight: 500;
     }
     .stTabs [aria-selected="true"] {
-        background: rgba(212, 175, 55, 0.1);
-        border: 1px solid #d4af37;
-        color: #d4af37 !important;
+        background: rgba(232, 168, 124, 0.1);
+        border: 1px solid #e8a87c;
+        color: #e8a87c !important;
         font-weight: 600;
-        box-shadow: 0 2px 10px rgba(212, 175, 55, 0.1);
+        box-shadow: 0 2px 10px rgba(232, 168, 124, 0.1);
     }
 
     /* --- INPUT FIELDS --- */
     .stTextInput>div>div>input, .stNumberInput>div>div>input, [data-testid="stFileUploadDropzone"] {
         background-color: rgba(0, 0, 0, 0.3) !important;
-        border: 1px solid rgba(212, 175, 55, 0.2) !important;
+        border: 1px solid rgba(232, 168, 124, 0.2) !important;
         border-radius: 8px !important;
         color: #ffffff !important;
         transition: all 0.3s ease;
     }
     .stTextInput>div>div>input:focus, .stNumberInput>div>div>input:focus {
-        border-color: #d4af37 !important;
-        box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2) !important;
+        border-color: #e8a87c !important;
+        box-shadow: 0 0 0 2px rgba(232, 168, 124, 0.2) !important;
     }
     
     /* Alert Box */
     [data-testid="stAlert"] {
-        background-color: rgba(40, 10, 10, 0.8) !important;
-        border: 1px solid #d4af37 !important;
+        background-color: rgba(60, 15, 15, 0.8) !important;
+        border: 1px solid #e8a87c !important;
         color: #fcfbf9 !important;
         border-radius: 10px;
     }
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
+
+# Inject Background HTML Elements (Harus diletakkan setelah CSS)
+st.markdown("""
+<div class="bg-container">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+</div>
+""", unsafe_allow_html=True)
+
 pio.templates.default = "plotly_dark"
 
 # ==============================================================================
-# FUNGSI LOGIKA BACKEND (TIDAK ADA PERUBAHAN)
+# FUNGSI LOGIKA BACKEND
 # ==============================================================================
 def get_api_key() -> str | None:
     env_key = os.getenv("GEMINI_API_KEY")
@@ -307,23 +354,23 @@ def reset_generated_outputs() -> None:
 init_session_state()
 
 # ==============================================================================
-# SIDEBAR: PREMIUM CONTROL PANEL
+# SIDEBAR: CONTROL PANEL
 # ==============================================================================
 with st.sidebar:
     st.markdown("""
         <div style="margin-bottom: 25px; text-align: center;">
-            <h2 class="brand-title" style="color: #ffffff; margin:0; font-size: 2rem;">Auditraa<span style="color:#d4af37;">.</span></h2>
-            <p style="color: #d4af37; font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;">Smart Audit Engine</p>
+            <h2 class="brand-title" style="color: #ffffff; margin:0; font-size: 2rem;">Auditraa<span style="color:#e8a87c;">.</span></h2>
+            <p style="color: #e8a87c; font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;">Smart Audit Engine</p>
         </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("<div style='border-bottom: 1px solid rgba(212,175,55,0.2); margin-bottom: 20px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='border-bottom: 1px solid rgba(232,168,124,0.2); margin-bottom: 20px;'></div>", unsafe_allow_html=True)
     st.markdown("### ⚙️ Parameter Audit")
     client_name = st.text_input("Nama Entitas / Klien", value="PT Nusantara Sejahtera Tbk")
     period = st.text_input("Periode Audit", value="Tahun Buku 2025")
     materiality = st.number_input("Ambang Materialitas (Rp)", min_value=1_000_000, max_value=100_000_000_000, value=50_000_000, step=5_000_000, format="%d")
 
-    st.markdown("<div style='border-bottom: 1px solid rgba(212,175,55,0.2); margin: 20px 0;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='border-bottom: 1px solid rgba(232,168,124,0.2); margin: 20px 0;'></div>", unsafe_allow_html=True)
     st.markdown("### 📂 Manajemen Data")
     uploaded_file = st.file_uploader("Unggah file (.xlsx)", type=["xlsx"])
     
@@ -338,11 +385,11 @@ with st.sidebar:
         use_container_width=True,
     )
 
-    st.markdown("<div style='border-bottom: 1px solid rgba(212,175,55,0.2); margin: 20px 0;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='border-bottom: 1px solid rgba(232,168,124,0.2); margin: 20px 0;'></div>", unsafe_allow_html=True)
     st.caption("🛡️ **Keamanan:** Jangan unggah data klien riil tanpa izin. Gunakan data fiktif untuk pengujian.")
 
 # ==============================================================================
-# HEADER MAIN AREA (DENGAN ANIMASI RADAR CORE)
+# HEADER MAIN AREA
 # ==============================================================================
 st.markdown("""
 <div class="header-container">
@@ -359,7 +406,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# PEMUATAN DATA & WELCOME SCREEN
+# PEMUATAN DATA
 # ==============================================================================
 raw_df = None
 if uploaded_file is not None:
@@ -391,10 +438,10 @@ tab1, tab2, tab3, tab4 = st.tabs([
 ])
 
 # ------------------------------------------------------------------------------
-# TAB 1: KERTAS KERJA (DASHBOARD UTAMA)
+# TAB 1: KERTAS KERJA
 # ------------------------------------------------------------------------------
 with tab1:
-    # KPI Cards (Glassmorphism)
+    # KPI Cards
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         with st.container(border=True):
@@ -431,18 +478,17 @@ with tab1:
     with col_right:
         with st.container(border=True):
             st.markdown("#### 📈 Analisis Varians")
-            # Warna grafik disesuaikan dengan tema Burgundy & Gold
             fig = px.bar(
                 wp_df, x="Category", y="Variance", color="Severity", text="WP_Ref",
-                color_discrete_map={"High": "#ff4d4d", "Medium": "#d4af37", "Low": "#2a9d8f"},
+                color_discrete_map={"High": "#ff4d4d", "Medium": "#e8a87c", "Low": "#2a9d8f"},
                 labels={"Category": "", "Variance": "Selisih [Rp]", "Severity": ""},
             )
             fig.update_layout(
                 plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
                 font=dict(color="#e0e0e0"), margin=dict(l=10, r=10, t=10, b=10)
             )
-            fig.add_hline(y=float(materiality), line_dash="dot", line_color="#d4af37", annotation_text="Batas (+)")
-            fig.add_hline(y=-float(materiality), line_dash="dot", line_color="#d4af37", annotation_text="Batas (-)")
+            fig.add_hline(y=float(materiality), line_dash="dot", line_color="#e8a87c", annotation_text="Batas (+)")
+            fig.add_hline(y=-float(materiality), line_dash="dot", line_color="#e8a87c", annotation_text="Batas (-)")
             fig.update_traces(textposition="outside")
             st.plotly_chart(fig, use_container_width=True)
 
