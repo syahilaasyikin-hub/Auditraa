@@ -33,7 +33,7 @@ st.set_page_config(
 )
 
 # ==============================================================================
-# CSS PREMIUM: PARALLAX, STARS, INTERACTIVE 3D AUDIT ILLUSTRATION
+# CSS PREMIUM: PARALLAX, STARS, INTERACTIVE 3D HOLOGRAPHIC CUBE
 # ==============================================================================
 custom_css = """
 <style>
@@ -156,103 +156,86 @@ custom_css = """
     }
 
     /* ======================================================================== */
-    /* ILUSTRASI 3D AUDIT (DOKUMEN & KACA PEMBESAR)                             */
+    /* ILUSTRASI 3D AUDIT: HOLOGRAPHIC DATA CUBE                                */
     /* ======================================================================== */
     .illustration-wrapper {
-        width: 220px; height: 220px;
-        perspective: 1000px;
+        width: 200px; height: 200px;
+        perspective: 800px;
         z-index: 2;
         position: relative;
         display: flex; align-items: center; justify-content: center;
     }
-    .illustration-float {
-        width: 100%; height: 100%;
-        animation: floatAnim 6s ease-in-out infinite;
+    
+    /* Kubus Data Holografik */
+    .cube-container {
+        width: 90px; height: 90px;
+        position: absolute;
         transform-style: preserve-3d;
-        position: relative;
+        animation: rotateCube 12s linear infinite;
+        transition: all 0.5s ease;
     }
     
-    /* Animasi Melayang */
-    @keyframes floatAnim {
-        0%, 100% { transform: translateY(0) rotateX(20deg) rotateY(-20deg); }
-        50% { transform: translateY(-15px) rotateX(25deg) rotateY(-10deg); }
+    /* Animasi Rotasi Kubus */
+    @keyframes rotateCube {
+        0% { transform: rotateX(-20deg) rotateY(0deg); }
+        100% { transform: rotateX(-20deg) rotateY(360deg); }
     }
-    
-    /* Efek Hover (Membesar & Memutar) */
-    .illustration-wrapper:hover .illustration-float {
+
+    /* Efek Hover Interaktif: Kubus Berhenti, Membesar, dan Memiringkan Sisi */
+    .illustration-wrapper:hover .cube-container {
         animation-play-state: paused;
-        transform: scale(1.15) rotateX(10deg) rotateY(10deg) translateZ(50px);
-        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transform: rotateX(-10deg) rotateY(45deg) scale(1.2);
+        filter: drop-shadow(0 0 20px rgba(232, 168, 124, 0.8));
     }
 
-    /* Dokumen Laporan Keuangan */
-    .audit-doc {
-        position: absolute;
-        width: 120px; height: 150px;
-        background: linear-gradient(135deg, rgba(60, 15, 15, 0.9), rgba(30, 5, 5, 0.9));
-        border: 2px solid rgba(232, 168, 124, 0.5);
-        border-radius: 8px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(232, 168, 124, 0.1);
-        top: 15px; left: 20px;
-        padding: 15px;
-        transform: translateZ(0);
+    /* Sisi-Sisi Kubus */
+    .cube-face {
+        position: absolute; width: 90px; height: 90px;
+        background: rgba(60, 15, 15, 0.85);
+        border: 1.5px solid #e8a87c;
+        box-shadow: inset 0 0 15px rgba(232, 168, 124, 0.3), 0 0 10px rgba(232, 168, 124, 0.2);
+        backdrop-filter: blur(4px);
     }
-    .doc-line { width: 100%; height: 6px; background: rgba(232, 168, 124, 0.3); border-radius: 3px; margin-bottom: 8px; }
-    .doc-line.short { width: 60%; }
-    .doc-chart {
-        position: absolute; bottom: 15px; left: 15px; right: 15px; height: 60px;
-        display: flex; align-items: flex-end; gap: 8px;
-    }
-    .doc-bar {
-        flex: 1; background: linear-gradient(to top, #e8a87c, #fdfbf7);
-        border-radius: 3px 3px 0 0;
-        box-shadow: 0 0 10px rgba(232, 168, 124, 0.5);
-    }
-    .doc-bar.b1 { height: 40%; }
-    .doc-bar.b2 { height: 80%; }
-    .doc-bar.b3 { height: 60%; }
+    .face-front  { transform: translateZ(45px); display: flex; align-items: flex-end; justify-content: center; gap: 6px; padding-bottom: 10px; }
+    .face-back   { transform: rotateY(180deg) translateZ(45px); }
+    .face-right  { transform: rotateY(90deg) translateZ(45px); display: flex; flex-direction: column; justify-content: center; padding: 15px; gap: 6px; }
+    .face-left   { transform: rotateY(-90deg) translateZ(45px); }
+    .face-top    { transform: rotateX(90deg) translateZ(45px); display: flex; align-items: center; justify-content: center; }
+    .face-bottom { transform: rotateX(-90deg) translateZ(45px); }
 
-    /* Kaca Pembesar (Magnifying Glass) */
-    .audit-magnifier {
-        position: absolute;
-        width: 80px; height: 80px;
-        top: 20px; right: 10px;
-        transform: translateZ(40px);
-        animation: scanAction 4s ease-in-out infinite alternate;
-    }
-    
-    /* Animasi Memindai Dokumen */
-    @keyframes scanAction {
-        0% { transform: translateZ(40px) translate(0, 0) rotate(-10deg); }
-        100% { transform: translateZ(40px) translate(-30px, 40px) rotate(15deg); }
-    }
-    
-    .glass-lens {
-        width: 60px; height: 60px;
-        border: 4px solid #e8a87c;
+    /* Elemen di Dalam Kubus */
+    /* 1. Grafik Batang (Sisi Depan) */
+    .cube-bar { width: 12px; background: linear-gradient(to top, #d4af37, #fdfbf7); border-radius: 2px 2px 0 0; box-shadow: 0 0 8px #e8a87c; }
+    .cube-bar.b1 { height: 25px; }
+    .cube-bar.b2 { height: 50px; animation: pulseBar 1.5s infinite alternate; }
+    .cube-bar.b3 { height: 35px; animation: pulseBar 1.5s infinite alternate 0.5s; }
+    @keyframes pulseBar { 0% { height: 20px; } 100% { height: 50px; } }
+
+    /* 2. Garis Teks Laporan (Sisi Kanan) */
+    .cube-line { width: 100%; height: 4px; background: rgba(232, 168, 124, 0.5); border-radius: 2px; }
+    .cube-line.short { width: 60%; }
+
+    /* 3. Inti AI (Sisi Atas) */
+    .cube-core {
+        width: 30px; height: 30px;
+        background: #e8a87c;
         border-radius: 50%;
-        background: rgba(232, 168, 124, 0.1);
-        box-shadow: 0 0 15px rgba(232, 168, 124, 0.4), inset 0 0 10px rgba(232, 168, 124, 0.2);
-        position: relative;
-        backdrop-filter: blur(2px);
+        box-shadow: 0 0 20px #e8a87c, 0 0 40px rgba(232, 168, 124, 0.6);
+        animation: pulseCore 1s infinite alternate;
     }
-    /* Efek Pantulan Cahaya Lensa */
-    .glass-lens::after {
-        content: ''; position: absolute;
-        top: 10px; left: 10px; width: 15px; height: 8px;
-        background: rgba(255, 255, 255, 0.4);
-        border-radius: 50%; transform: rotate(-45deg);
-    }
-    /* Gagang Kaca Pembesar */
-    .glass-handle {
+    @keyframes pulseCore { 0% { transform: scale(0.8); } 100% { transform: scale(1.2); } }
+
+    /* Cincin Orbit Emas yang Mengelilingi Kubus */
+    .orbit-ring {
         position: absolute;
-        width: 10px; height: 30px;
-        background: linear-gradient(to bottom, #e8a87c, #a05c3b);
-        border-radius: 5px;
-        bottom: -10px; right: -5px;
-        transform: rotate(-45deg);
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        width: 160px; height: 160px;
+        border: 2px dashed rgba(232, 168, 124, 0.4);
+        border-radius: 50%;
+        transform: rotateX(70deg) rotateY(15deg);
+        animation: spinRing 10s linear infinite;
+        box-shadow: 0 0 15px rgba(232, 168, 124, 0.1);
     }
+    @keyframes spinRing { 100% { transform: rotateX(70deg) rotateY(15deg) rotateZ(360deg); } }
 
     /* Card Glassmorphism */
     div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -428,7 +411,7 @@ with st.sidebar:
     st.caption("🛡️ **Keamanan:** Jangan unggah data klien riil tanpa izin.")
 
 # ==============================================================================
-# HEADER MAIN AREA (DENGAN ILUSTRASI DOKUMEN AUDIT & KACA PEMBESAR)
+# HEADER MAIN AREA (DENGAN ILUSTRASI HOLOGRAPHIC DATA CUBE)
 # ==============================================================================
 st.markdown("""
 <div class="header-container">
@@ -436,23 +419,27 @@ st.markdown("""
         <h1>Auditraa: Smart Audit Engine</h1>
         <p>Sistem Cerdas Deteksi Anomali Saldo & Penyusunan Draf Audit.</p>
     </div>
-    <!-- Ilustrasi 3D Interaktif: Dokumen Keuangan & Kaca Pembesar -->
+    <!-- Ilustrasi 3D Interaktif: Kubus Data Holografik -->
     <div class="illustration-wrapper">
-        <div class="illustration-float">
-            <div class="audit-doc">
-                <div class="doc-line"></div>
-                <div class="doc-line short"></div>
-                <div class="doc-line"></div>
-                <div class="doc-chart">
-                    <div class="doc-bar b1"></div>
-                    <div class="doc-bar b2"></div>
-                    <div class="doc-bar b3"></div>
-                </div>
+        <div class="orbit-ring"></div>
+        <div class="cube-container">
+            <div class="cube-face face-front">
+                <div class="cube-bar b1"></div>
+                <div class="cube-bar b2"></div>
+                <div class="cube-bar b3"></div>
             </div>
-            <div class="audit-magnifier">
-                <div class="glass-lens"></div>
-                <div class="glass-handle"></div>
+            <div class="cube-face face-right">
+                <div class="cube-line"></div>
+                <div class="cube-line short"></div>
+                <div class="cube-line"></div>
+                <div class="cube-line short"></div>
             </div>
+            <div class="cube-face face-top">
+                <div class="cube-core"></div>
+            </div>
+            <div class="cube-face face-back"></div>
+            <div class="cube-face face-left"></div>
+            <div class="cube-face face-bottom"></div>
         </div>
     </div>
 </div>
